@@ -88,14 +88,42 @@ class MembersApiController extends ApiController
 	 */
 	public function show($id)
 	{
-		$memberUtilities = new MemberUtilities();
-
 		if ($member = Member::with('affiliates.org')->find($id))
 		{
 			return $this->success($member);
 		}
 		return $this->not_found();
 	}
+
+
+
+
+	/**
+	 * Request GNZ approval for a user.
+	 *
+	 * @param  int  $id
+	 * @return \Illuminate\Http\Response
+	 */
+	public function requestApproval($id)
+	{
+		// check we have permission to request approval
+		if (Gate::denies('club-admin')) {
+			return $this->denied();
+		}
+
+		// find them member and set their pending approval status, and send an email notification
+		if ($member = Member::with('affiliates.org')->find($id))
+		{
+			$member->pending_approval = true;
+			$member->save();
+
+			
+			// TODO send Email notification here
+			return $this->success($member);
+		}
+		return $this->not_found();
+	}
+
 
 
 	public function update(Request $request, $id)

@@ -134,11 +134,25 @@
 				<tr>
 					<th colspan="2">GNZ Details</th>
 				</tr>
+				<tr v-if="showAdmin && member.pending_approval">
+					<td class="table-label col-xs-6">
+						<span class="fa fa-exclamation-triangle warning"></span>
+						Pending Approval
+					</td>
+					<td>
+						<button v-show="member.pending_approval" class="btn btn-success" v-on:click="approveMember">Approve Member</button>
+					</td>
+				</tr>
 				<tr>
 					<td class="table-label col-xs-6">GNZ Number</td>
 					<td>
-						<input type="text" v-model="member.nzga_number" class="form-control" v-if="showAdmin">
+						<input type="text" v-model="member.nzga_number" class="form-control mb-2" v-if="showAdmin">
 						<span v-if="!showAdmin">{{member.nzga_number}}</span>
+						
+						<div v-if="!member.nzga_number && !member.pending_approval">
+							<span class="fa fa-exclamation-triangle warning"></span> None
+							<button class="ml-2 btn btn-success" v-on:click="requestApproval">Request GNZ Number</button>
+						</div>
 					</td>
 				</tr>
 				<tr>
@@ -292,20 +306,7 @@
 				member.date_of_birth = this.apiDateFormat(member.date_of_birth);
 
 				window.axios.put('/api/v1/members/' + this.memberId, member).then(function (response) {
-					for(var i=0; i<that.member.affiliates.length; i++)
-					{
-						that.updateAffiliate(that.member.affiliates[i])
-					}
 					messages.$emit('success', 'Member Updated');
-				});
-			},
-			updateAffiliate: function(affiliate) {
-				var affiliate_clone = _.clone(affiliate);
-				affiliate_clone.join_date = this.apiDateFormat(affiliate_clone.join_date);
-				affiliate_clone.end_date = this.apiDateFormat(affiliate_clone.end_date);
-
-				window.axios.put('/api/v1/affiliates/' + affiliate.id, affiliate_clone).then(function (response) {
-					messages.$emit('success', 'Affiliate Updated');
 				});
 			},
 			resignAffiliate: function(affiliate) {
@@ -313,6 +314,17 @@
 				//affiliate.end_date.set({hour:0,minute:0,second:0,millisecond:0}).toDate();
 				affiliate.resigned = true;
 				this.updateAffiliate(affiliate);
+			},
+			approveMember: function() {
+				this.member.pending_approval=false;
+				this.saveMember();
+			},
+			requestApproval: function() {
+				var that=this;
+				window.axios.post('/api/v1/members/' + this.memberId + '/request-approval').then(function (response) {
+					that.member.pending_request=true;
+					messages.$emit('success', 'Request Sent');
+				});
 			}
 		}
 	}

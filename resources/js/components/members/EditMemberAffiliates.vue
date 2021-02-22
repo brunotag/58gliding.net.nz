@@ -4,8 +4,7 @@
 
 	Add New 
 
-
-	<table class="table table-striped table-sm collapsable">
+	<table class="table table-striped table-sm collapsable" v-if="member && memberTypes">
 		<tr>
 			<th>Club</th>
 			<th>Membership Type</th>
@@ -115,12 +114,15 @@
 		methods: {
 			// filter membership types by the given org ID
 			filteredMembershipTypes: function(org_id) {
+				console.log(org_id);
 				return this.memberTypes.filter( function (m) {
 					if (m.org_id == org_id) return true;
 				});
 			},
 			getMemberType(membertypeId) {
-				return this.memberTypes.find( ({ id }) => id === membertypeId);
+				var result=  this.memberTypes.find( ({ id }) => id === membertypeId);
+				if (result) return result;
+				return 'UNKOWN';
 			},
 			loadMember: function() {
 				var that = this;

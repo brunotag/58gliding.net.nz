@@ -193,7 +193,7 @@ class MemberUtilities {
 					$query->where('contest_pilot','=','1');
 				});
 				break;
-			case 'waiting_approval':
+			case 'pending_approval':
 				$query->where(function($query) {
 					$query->where('pending_approval','=','1');
 				});

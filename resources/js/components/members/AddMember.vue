@@ -67,10 +67,6 @@
 			</select>
 		</div>
 
-		<div class="form-group col-md-6">
-			<label for="submit_to_gnz"><input id="submit_to_gnz" type="checkbox" v-model="submitToGnz" :value="true"> Submit to GNZ for a GNZ Number</label>
-		</div>
-
 	</div>
 
 
@@ -129,8 +125,7 @@
 					org_id: this.org.id, 
 					first_name: this.first_name, 
 					last_name: this.last_name, 
-					membertype_id: this.membertype_id, 
-					submit_to_gnz: this.submitToGnz
+					membertype_id: this.membertype_id
 				}).then(function (response) {
 					messages.$emit('success', 'Member added');
 				}).catch(
