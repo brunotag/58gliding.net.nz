@@ -50,9 +50,14 @@ class MembersApiController extends ApiController
 		$member->non_member = 1;
 		$member->middle_name = '';
 		$member->email = '';
-		$member->pending_approval = 0;
 		$member->club = $org->gnz_code;
 		$member->created = Carbon::now(new CarbonTimeZone('Pacific/Auckland'));
+
+		if ( $request->input('submit_to_gnz') ) {
+			$member->pending_approval = 1;
+		} else {
+			$member->pending_approval = 0;
+		}
 
 		$this->log_new_member($member);
 

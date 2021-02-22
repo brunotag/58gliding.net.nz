@@ -40,27 +40,6 @@
 	</div>
 
 
-
-
-	<div v-if="showAddExisting">
-
-		<div class="form-group col-md-6">
-			<label for="member_type">Type of Member To Add As</label> 
-			<select v-model="membertype_id" name="member_type" id="member_type" v-if="memberTypes.length>0" class="form-control">
-				<option v-for="memberType in memberTypes" :value="memberType.id">{{memberType.name}}</option>
-			</select>
-		</div>
-
-		<div class="form-group col-md-6">
-			<button v-if="selectedMember" class="btn btn-primary mr-2" v-on:click="addExistingMember()">
-				Add {{selectedMember.first_name}} to {{org.name}}
-			</button>
-		</div>
-	</div>
-
-
-
-
 	<div v-if="showAddNew">
 
 		<div class="form-group col-md-6">
@@ -76,20 +55,45 @@
 			<label for="last_name">Last Name</label> 
 			<input type="text" v-model="last_name" class="form-control" id="last_name" name="last_name">
 		</div>
+	</div>
+
+	<div v-if="showAddExisting || showAddNew">
 
 		<div class="form-group col-md-6">
 			<label for="member_type">Type of Member To Add As</label> 
 			<select v-model="membertype_id" name="member_type" id="member_type" v-if="memberTypes.length>0" class="form-control">
+				<option :value="null" disabled selected>Select type of member...</option>
 				<option v-for="memberType in memberTypes" :value="memberType.id">{{memberType.name}}</option>
 			</select>
 		</div>
 
+		<div class="form-group col-md-6">
+			<label for="submit_to_gnz"><input id="submit_to_gnz" type="checkbox" v-model="submitToGnz" :value="true"> Submit to GNZ for a GNZ Number</label>
+		</div>
 
+	</div>
+
+
+
+
+	<div v-if="showAddExisting">
+
+		<div class="form-group col-md-6">
+			<button v-if="selectedMember" class="btn btn-primary mr-2" v-on:click="addExistingMember()">
+				Add {{selectedMember.first_name}} to {{org.name}}
+			</button>
+		</div>
+	</div>
+
+	<div v-if="showAddNew">
 		<div class="form-group col-md-6">
 			<button class="btn btn-primary" v-on:click="addNewMember()">Add New Member</button>
 		</div>
 		
 	</div>
+
+
+
 
 </div></template>
 
@@ -111,6 +115,7 @@
 				memberTypes: [],
 				showAddNew: false,
 				showAddExisting: false,
+				submitToGnz: false
 			}
 		},
 		mounted() {
@@ -120,7 +125,13 @@
 		methods: {
 			addNewMember: function()
 			{
-				window.axios.post('/api/v1/members', {org_id: this.org.id, first_name: this.first_name, last_name: this.last_name, membertype_id: this.membertype_id}).then(function (response) {
+				window.axios.post('/api/v1/members', {
+					org_id: this.org.id, 
+					first_name: this.first_name, 
+					last_name: this.last_name, 
+					membertype_id: this.membertype_id, 
+					submit_to_gnz: this.submitToGnz
+				}).then(function (response) {
 					messages.$emit('success', 'Member added');
 				}).catch(
 					function (error) {

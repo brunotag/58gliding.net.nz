@@ -53,6 +53,7 @@
 			<button type="button" class="btn btn-sm mr-1" v-bind:class="[ state.type=='oo' ? 'btn-secondary': 'btn-outline-dark' ]" v-on:click="filterTo('oo')">OOs</button>
 			<button type="button" class="btn btn-sm mr-1" v-bind:class="[ state.type=='coaches' ? 'btn-secondary': 'btn-outline-dark' ]" v-on:click="filterTo('coaches')">Coaches</button>
 			<button type="button" class="btn btn-sm mr-1" v-bind:class="[ state.type=='contest_pilots' ? 'btn-secondary': 'btn-outline-dark' ]" v-on:click="filterTo('contest_pilots')">Contest Pilots</button>
+			<button v-if="admin" type="button" class="btn btn-sm mr-1" v-bind:class="[ state.type=='waiting_approval' ? 'btn-secondary': 'btn-outline-dark' ]" v-on:click="filterTo('waiting_approval')">Waiting Approval</button>
 		</div>
 
 
@@ -360,6 +361,9 @@
 			filterTo: function(type) {
 				this.state.type = type;
 				this.state.page=1;
+				if (type=='waiting_approval') {
+					this.state.ex_members=true;
+				}
 			},
 			stateChanged: function() {
 				History.pushState(this.state, null, "?search=" + this.state.search + "&type=" + this.state.type + "&page=" + this.state.page + "&ex_members=" + this.state.ex_members);

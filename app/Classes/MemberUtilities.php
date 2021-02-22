@@ -78,25 +78,20 @@ class MemberUtilities {
 		// Check if we are filtering to GNZ members only.
 		// Defaults to true if not given
 		if ($org==null) {
-			if ($request->input('ex_members')!='true')
+			if ($request->input('ex_members', 'false')!='true')
 			{
-				$query->where('membership_type', '<>', 'Resigned');
+				$query->where(function($query) {
+					$query->where('membership_type', '<>', 'Resigned');
+				});
 			}
 		}
 		
-
-		// check if we are filtering to ex club members
-		$ex_members = true;
-		if ($request->input('ex_members', 'false')=='true')
-		{
-			$ex_members = false;
-		}
 
 		// filter to a specific organisation
 		if (isset($org)) {
 			$query->join('affiliates', 'affiliates.member_id', '=', 'gnz_member.id');
 			$query->where('affiliates.org_id', '=', DB::raw($org->id));
-			if ($ex_members) {
+			if ($request->input('ex_members', 'false')!='true') {
 				$query->where('affiliates.resigned', 0);
 			}
 		}
@@ -107,6 +102,7 @@ class MemberUtilities {
 			$join->on('gnz_member.id', '=', 'organisations.member_id')
 			     ->on('organisations.resigned', '=', DB::raw('0'));;
 		});
+
 
 
 		// join on the common ratings we need for sorting and display
@@ -195,6 +191,11 @@ class MemberUtilities {
 			case 'contest_pilots':
 				$query->where(function($query) {
 					$query->where('contest_pilot','=','1');
+				});
+				break;
+			case 'waiting_approval':
+				$query->where(function($query) {
+					$query->where('pending_approval','=','1');
 				});
 				break;
 			// case 'students':
