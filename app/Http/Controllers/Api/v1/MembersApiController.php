@@ -104,10 +104,85 @@ class MembersApiController extends ApiController
 	 * @param  int  $id
 	 * @return \Illuminate\Http\Response
 	 */
+	public function setGnzNumber($id)
+	{
+		// check we have permission to request approval
+		if (Gate::denies('admin')) {
+			return $this->denied();
+		}
+
+		// find them member and set their pending approval status, and send an email notification
+		if ($member = Member::with('affiliates.org')->find($id))
+		{
+			// find the next GNZ number in the database
+			$largest_gnz_number = Member::max('nzga_number');
+
+			$member->nzga_number = $largest_gnz_number + 1;
+			$member->save();
+
+			// TODO send Email notification here
+			return $this->success($member);
+		}
+		return $this->not_found();
+	}
+
+
+
+
+	/**
+	 * Resign a GNZ member
+	 * Any club admin can do this, but the GNZ admin will be notified.
+	 *
+	 * @param  int  $id
+	 * @return \Illuminate\Http\Response
+	 */
+	public function resignGnz(Request $request, $id)
+	{
+		// check we have permission to request approval
+		if (Gate::denies('any-club-admin')) {
+			return $this->denied();
+		}
+
+		// find them member and set their pending approval status, and send an email notification
+		if ($member = Member::with('affiliates.org')->find($id))
+		{
+			$old_member_type = $member->membership_type;
+			$member->membership_type = 'Resigned';
+
+			// get the resign date
+			$old_resign_date = $member->resigned;
+			$member->resigned = $request->get('resign_date');
+
+			// get the resign reason
+			$member->resigned_comment = $request->get('resigned_comment');
+
+			if ($member->save())
+			{
+				// ($member, $action, $field, $oldval, $newval)
+				$this->log_member_change($member, 'Resign Member', 'membership_type', $old_member_type, $member->membership_type);
+				$this->log_member_change($member, 'Resign Member', 'resigned', $old_resign_date, $member->resigned);
+
+				// TODO send Email notification here
+				return $this->success($member);
+			}
+
+		}
+		return $this->not_found();
+	}
+
+
+
+
+	/**
+	 * Request GNZ approval for a user.
+	 *
+	 * @param  int  $id
+	 * @return \Illuminate\Http\Response
+	 */
 	public function requestApproval($id)
 	{
 		// check we have permission to request approval
-		if (Gate::denies('club-admin')) {
+		if (Gate::denies('any-club-admin')) {
 			return $this->denied();
 		}
 

@@ -112,7 +112,17 @@
 			</td>
 		</tr>
 		<tr>
-			<td>Club Admin</td>
+			<td>Club Admin Of Any Club</td>
+			<td>
+				@can('any-club-admin') 
+					Yes 
+				@else 
+					No
+				@endcan
+			</td>
+		</tr>
+		<tr>
+			<td>Club Admin (of the current club)</td>
 			<td>
 				@can('club-admin') 
 					Yes 
@@ -122,7 +132,7 @@
 			</td>
 		</tr>
 		<tr>
-			<td>Club Member</td>
+			<td>Club Member (of the current club)</td>
 			<td>
 				@can('club-member') 
 					Yes 

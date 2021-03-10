@@ -25,6 +25,7 @@ class AuthServiceProvider extends ServiceProvider
 	protected $is_admin;
 	protected $is_gnz_member;
 	protected $is_club_admin = Array();
+	protected $is_any_club_admin;
 	protected $can_see_experimental_features;
 	protected $is_contest_admin;
 	protected $is_waypoint_admin;
@@ -95,6 +96,30 @@ class AuthServiceProvider extends ServiceProvider
 			}
 			$this->is_admin = false;
 			return false;
+		});
+
+
+		// if the user is club admin of any club.
+		Gate::define('any-club-admin', function ($user) 
+		{
+			if (isset($this->is_any_club_admin)) return $this->is_any_club_admin;
+			if (Gate::allows('admin')) return true; // check above first!
+
+
+			if ($role = Role::where('slug','club-admin')->first())
+			{
+
+				$userRole = RoleUser::where('role_id', $role->id)->where('user_id', $user->id)->first();
+
+				if ($userRole) {
+					$this->is_any_club_admin=true;
+					return true;
+				}
+			}
+
+			$this->is_any_club_admin=false;
+			return false;
+
 		});
 
 

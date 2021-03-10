@@ -185,6 +185,22 @@ module.exports = {
 		validateEmail: function(email) {
 			const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 			return re.test(String(email).toLowerCase());
+		},
+		isEmpty: function(e) {
+			switch (e) {
+				case "":
+				case 0:
+				case "0":
+				case null:
+				case false:
+				case typeof(e) == "undefined":
+					return true;
+				default:
+					return false;
+			}
+		},
+		isValidDate: function(d) {
+			return d instanceof Date && !isNaN(d);
 		}
 	}
 }
