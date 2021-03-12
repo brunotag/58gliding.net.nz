@@ -117,8 +117,12 @@ class MembersApiController extends ApiController
 			// find the next GNZ number in the database
 			$largest_gnz_number = Member::max('nzga_number');
 
+			$old_gnz_number = $member->nzga_number;
 			$member->nzga_number = $largest_gnz_number + 1;
 			$member->save();
+
+			// ($member, $action, $field, $oldval, $newval)
+			$this->log_member_change($member, 'Set GNZ Number', 'membership_type', $old_gnz_number, $member->nzga_number);
 
 			// TODO send Email notification here
 			return $this->success($member);
@@ -189,9 +193,12 @@ class MembersApiController extends ApiController
 		// find them member and set their pending approval status, and send an email notification
 		if ($member = Member::with('affiliates.org')->find($id))
 		{
+			$old_pending_approval = $member->pending_approval;
 			$member->pending_approval = true;
 			$member->save();
 
+			// ($member, $action, $field, $oldval, $newval)
+			$this->log_member_change($member, 'Requested Approval', 'pending_approval', $old_pending_approval, $member->pending_approval);
 			
 			// TODO send Email notification here
 			return $this->success($member);

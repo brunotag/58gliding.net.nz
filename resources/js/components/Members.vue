@@ -177,6 +177,7 @@
 				<th>Firstname</th>
 				<th>Lastname</th>
 				<th>Club</th>
+				<th v-if="state.org_id">Club Status</th>
 				<th>GNZ Status</th>
 				<th>City</th>
 				<th>Mobile</th>
@@ -190,6 +191,7 @@
 				<td><a v-bind:href="'/members/' + result.id">{{ result.first_name }}</a></td>
 				<td><a v-bind:href="'/members/' + result.id">{{ result.last_name }}</a></td>
 				<td>{{ result.club }}</td>
+				<td>{{ clubStatus(result) }}</td>
 				<td>{{ result.membership_type }}</td>
 				<td>{{ result.city }}</td>
 				<td>{{ result.mobile_phone }}</td>
@@ -294,7 +296,7 @@
 			if (this.get_url_param('type')) this.state.type = this.get_url_param('type');
 
 			if (this.get_url_param('ex_members')) this.get_url_param('ex_members')=='true' ? this.state.ex_members = true : this.state.ex_members = false;
-
+ 
 			var that = this;
 			History.replaceState(this.state, null, "?search=" + this.state.search + "&type=" + this.state.type + "&page=" + this.state.page + "&gnz_members=" + this.state.gnz_members + "&ex_members=" + this.state.ex_members);
 
@@ -311,6 +313,21 @@
 			that.loadSelected();
 		},
 		methods: {
+			clubStatus: function(result) {
+				var that = this;
+
+				var result2 = result.affiliates.filter(obj => {
+					return obj.org_id === that.state.org_id
+				});
+				//return result2[0];
+				//return result2[0].membertype;
+				//if (result2.length==0) return result;
+				if (!result2[0]) return '';
+				if (!result2[0].membertype) return '';
+				//return result;
+				return result2[0].membertype.name;
+
+			},
 			orgChanged: function() {
 				if (this.current_org) {
 					this.state.org_id = this.current_org.id;

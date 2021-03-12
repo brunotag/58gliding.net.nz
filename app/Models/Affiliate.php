@@ -9,10 +9,16 @@ class Affiliate extends Model
 	protected $table="affiliates";
 
 	protected $dates = ['join_date','end_date'];
+	protected $with = ['Membertype']; // eager load the membertype
 
 	public function org()
 	{
 		return $this->belongsTo('App\Models\Org');
+	}
+
+	public function membertype()
+	{
+		return $this->belongsTo('App\Models\Membertype');
 	}
 
 
