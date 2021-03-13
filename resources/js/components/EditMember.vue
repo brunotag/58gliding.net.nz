@@ -133,9 +133,7 @@
 				</tr>
 				<tr v-if="1">
 					
-					<button class="ml-2 btn btn-outline-dark" v-on:click="">Change Club</button>
 					<button class="ml-2 btn btn-outline-dark" v-on:click="showResignPanel=!showResignPanel">Resign Member...</button>
-
 
 					<div v-if="showResignPanel" class="card mt-3">
 						<div class="card-header">
@@ -327,9 +325,9 @@
 			this.loadOrgs();
 			this.loadMemberTypes();
 			this.loadMember();
+			this.resign_date = Vue.prototype.$moment().toDate(); // set to today by default
 			if (window.Laravel.admin==true) this.showAdmin=true;
 			if (window.Laravel.editAwards==true) this.showAdmin=true;
-			this.resign_date = Vue.prototype.$moment().toDate();
 		},
 		computed: {
 			orderedAffiliates: function () {

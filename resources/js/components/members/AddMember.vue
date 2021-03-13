@@ -59,6 +59,8 @@
 
 	<div v-if="showAddExisting || showAddNew">
 
+	
+
 		<div class="form-group col-md-6">
 			<label for="member_type">Type of Member To Add As</label> 
 			<select v-model="membertype_id" name="member_type" id="member_type" v-if="memberTypes.length>0" class="form-control">
@@ -67,9 +69,13 @@
 			</select>
 		</div>
 
+		<div class="form-group col-md-6">
+			<label for="member_type">Start Date</label> 
+			<v-date-picker id="start_date" v-model="start_date" :locale="{ id: 'start_date', firstDayOfWeek: 2, masks: { weekdays: 'WW', L: 'DD/MM/YYYY' } }" :popover="{ visibility: 'click' }"></v-date-picker>
+
+		</div>
+
 	</div>
-
-
 
 
 	<div v-if="showAddExisting">
@@ -109,6 +115,7 @@
 				last_name: null,
 				membertype_id: null,
 				memberTypes: [],
+				start_date: null,
 				showAddNew: false,
 				showAddExisting: false,
 				submitToGnz: false
@@ -117,12 +124,13 @@
 		mounted() {
 			this.org = window.Laravel.org;
 			this.loadMemberTypes();
+			this.start_date = Vue.prototype.$moment().toDate();  // set to today by default
 		},
 		methods: {
 			addNewMember: function()
 			{
 				window.axios.post('/api/v1/members', {
-					org_id: this.org.id, 
+					org_id: this.org.id,
 					first_name: this.first_name, 
 					last_name: this.last_name, 
 					membertype_id: this.membertype_id
@@ -148,7 +156,7 @@
 			{
 				var that=this;
 				// create the current date
-				var thedate = that.$moment().format("YYYY-MM-DD");
+				var thedate = Vue.prototype.$moment(this.start_date).format("YYYY-MM-DD");
 				window.axios.post('/api/v1/affiliates', {
 					org_id: this.org.id, 
 					member_id: this.existingMemberId, 
