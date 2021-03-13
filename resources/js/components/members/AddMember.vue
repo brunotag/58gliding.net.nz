@@ -136,12 +136,21 @@
 					membertype_id: this.membertype_id
 				}).then(function (response) {
 					messages.$emit('success', 'Member added');
+					console.log(response);
+
+					var member = response.data.data;
+
+					window.location.href = '/members/' + member.id + '/edit';
 				}).catch(
 					function (error) {
-						var errors = Object.entries(error.response.data.errors);
-						for (const [name, error] of errors) {
-							messages.$emit('error', `${error}`);
+						console.log(error);
+						if (error.response) {
+							var errors = Object.entries(error.response.data.errors);
+							for (const [name, error] of errors) {
+								messages.$emit('error', `${error}`);
+							}
 						}
+						
 					}
 				);
 			},
@@ -164,6 +173,7 @@
 					join_date: thedate
 				}).then(function (response) {
 					messages.$emit('success', 'Member added');
+					window.location.href = '/members/' + that.existingMemberId + '/edit';
 				}).catch(
 					function (error) {
 						var errors = Object.entries(error.response.data.errors);
