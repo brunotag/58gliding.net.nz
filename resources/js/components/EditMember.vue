@@ -184,13 +184,33 @@
 				</tr>
 				<tr v-if="member.pending_approval">
 					<td class="table-label col-xs-6">
-						<span class="fa fa-exclamation-triangle warning"></span>
 						GNZ Approval
 					</td>
 					<td>
-						Pending Approval <br>
+						<p>
+							<span class="fa fa-exclamation-triangle danger"></span> Pending Approval <br>
+						</p>
 
 						<button v-show="showAdmin" class="btn btn-success" v-on:click="approveMember">Approve Member</button>
+
+						<div v-if="duplicates.length>0">
+							<p class="mt-3">
+								<span class="fa fa-exclamation-triangle warning"></span> 
+								Identical Birthdays Found
+							</p>
+							
+							<ul>
+								<li v-for="duplicate in duplicates">
+									<a :href="'/members/' + duplicate.id + '/edit'">
+										{{duplicate.first_name}} {{duplicate.middle_name}} {{duplicate.last_name}} #{{duplicate.nzga_number}}</a>
+										<br>
+										{{duplicate.address_1}}, {{duplicate.city}} {{duplicate.mobile_phone}}
+									
+								</li>
+							</ul>
+
+						</div>
+
 						
 					</td>
 				</tr>
@@ -202,6 +222,22 @@
 					</td>
 					<td>
 						<button v-if="!showAdmin" class="ml-2 btn btn-success" v-on:click="requestApproval">Request GNZ Approval</button>
+					</td>
+				</tr>
+				<tr>
+					<td class="table-label col-xs-6">GNZ Membership Type</td>
+					<td>
+
+						<select v-model="member.membership_type" class="form-control">
+							<option value="Resigned">Resigned</option>
+							<option value="Flying">Flying</option>
+							<option value="Mag Only">Communications</option>
+							<option value="VFP Bulk">Visiting Foreign Pilot Bulk</option>
+							<option value="VFP 3 Mth">Visiting Foreign Pilot 3 Mth</option>
+							<option value="Junior">Junior</option>
+							<option value="">None</option>
+						</select>
+
 					</td>
 				</tr>
 				<tr>
@@ -221,30 +257,10 @@
 				<tr>
 					<td class="table-label col-xs-6">Primary Club</td>
 					<td>
-						<select  v-if="showAdmin" class="form-control input-sm" name="club" v-model="member.club">
+						<select  class="form-control input-sm" name="club" v-model="member.club">
 							<option v-bind:value="null">None</option>
 							<option v-for="org in orgs" v-bind:value="org.gnz_code">{{org.name}}</option>
 						</select>
-
-						<span v-if="!showAdmin">{{member.club}}</span>
-					</td>
-				</tr>
-				<tr>
-					<td class="table-label col-xs-6">GNZ Membership Type</td>
-					<td>
-
-						<select v-model="member.membership_type" class="form-control" v-if="showAdmin">
-							<option value="Resigned">Resigned</option>
-							<option value="Flying">Flying</option>
-							<option value="Mag Only">Communications</option>
-							<option value="VFP Bulk">Visiting Foreign Pilot Bulk</option>
-							<option value="VFP 3 Mth">Visiting Foreign Pilot 3 Mth</option>
-							<option value="Junior">Junior</option>
-							<option value="">None</option>
-						</select>
-
-						<span v-if="!showAdmin">{{member.membership_type}}</span>
-
 					</td>
 				</tr>
 				<tr v-if="showAdmin">
@@ -317,7 +333,8 @@
 				resign_gnz: true,
 				resign_reason: '',
 				resign_date: null,
-				waitingResign: false
+				waitingResign: false,
+				duplicates: [] // any member duplicates, used when approving a member
 			}
 		},
 		mounted() {
@@ -351,6 +368,10 @@
 							affiliate.to_resign = true;
 						});
 					}
+
+					if (that.member.pending_approval) {
+						that.loadDuplicates();
+					}
 				});
 			},
 			loadOrgs: function() {
@@ -374,6 +395,13 @@
 
 				window.axios.put('/api/v1/members/' + this.memberId, member).then(function (response) {
 					messages.$emit('success', 'Member Updated');
+				});
+			},
+			loadDuplicates: function() {
+				if (!window.Laravel.admin) return;
+				var that=this;
+				window.axios.get('/api/v1/members/' + this.memberId + '/find-duplicates').then(function (response) {
+					that.duplicates = response.data.data;
 				});
 			},
 			resignMember: function() {

@@ -164,6 +164,7 @@ Route::group(['prefix'=>'v1', 'namespace' => 'Api\v1'], function()
 		Route::post('/members/{member_id}/request-approval',  'MembersApiController@requestApproval');
 		Route::post('/members/{member_id}/resign-gnz',  'MembersApiController@resignGnz');
 		Route::post('/members/{member_id}/set-next-gnz-number',  'MembersApiController@setGnzNumber');
+		Route::get('/members/{member_id}/find-duplicates',  'MembersApiController@findDuplicates');
 
 
 		Route::get('/members/{member_id}/ratings/{rating_member_id}',  'RatingMemberApiController@get');

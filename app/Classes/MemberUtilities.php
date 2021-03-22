@@ -162,6 +162,30 @@ class MemberUtilities {
 			}
 		}
 
+		// check if we should show those pending approval
+		if ($request->input('type')=='pending_approval')
+		{
+			// if we are asking to see pending approval, then show only them
+			$query->where(function($query) {
+				$query->where('pending_approval','=','1');
+			});
+		} 
+		else
+		{
+			// any request type
+			if ($org==null) {
+				// if we are looking at GNZ we don't want those waiting for approval, or those without a GNZ number yet
+				// so filter them out
+				$query->where(function($query) {
+					$query->where('pending_approval','=','0');
+				});
+				$query->where(function($query) {
+					$query->whereNotNull('nzga_number');
+				});
+			}
+			// otherwise if we're lookinng at a club, we can include those waiting for GNZ approval so don't do anything.
+		}
+
 
 
 		switch ($request->input('type'))
@@ -191,11 +215,6 @@ class MemberUtilities {
 			case 'contest_pilots':
 				$query->where(function($query) {
 					$query->where('contest_pilot','=','1');
-				});
-				break;
-			case 'pending_approval':
-				$query->where(function($query) {
-					$query->where('pending_approval','=','1');
 				});
 				break;
 			// case 'students':
@@ -256,7 +275,6 @@ class MemberUtilities {
 
 	public function filter_view_result(&$member)
 	{
-		return true;
 		// if you can edit this (i.e. yourself or you're the members club admin) allow viewing
 		// if (Gate::allows('edit-member', $member)) {
 		// 	return true;

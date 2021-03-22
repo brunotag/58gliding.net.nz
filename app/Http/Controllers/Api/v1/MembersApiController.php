@@ -90,6 +90,8 @@ class MembersApiController extends ApiController
 	{
 		if ($member = Member::with('affiliates.org')->find($id))
 		{
+			$member_utilities = new MemberUtilities();
+			$member_utilities->filter_view_result($member);
 			return $this->success($member);
 		}
 		return $this->not_found();
@@ -170,6 +172,36 @@ class MembersApiController extends ApiController
 				return $this->success($member);
 			}
 
+		}
+		return $this->not_found();
+	}
+
+
+	/**
+	 * Given a GNZ user ID, find all other users with the same birthdate.
+	 * This is admin only feature, so to not give away birthday private information
+	 *
+	 * @param  int  $id
+	 * @return \Illuminate\Http\Response
+	 */
+	public function findDuplicates(Request $request, $id)
+	{
+		// check we have permission to request approval
+		if (Gate::denies('admin')) {
+			return $this->denied();
+		}
+
+		// find them member and set their pending approval status, and send an email notification
+		if ($member = Member::find($id))
+		{
+			$potential_same_users = Member::where('date_of_birth', '=', $member->date_of_birth)
+				->where('id', '<>', $member->id)
+				->get();
+			if (count($potential_same_users)>=0)
+			{
+				return $this->success($potential_same_users);
+			}
+			return $this->success();
 		}
 		return $this->not_found();
 	}
@@ -273,12 +305,9 @@ class MembersApiController extends ApiController
 			$form['flight_1500km_number'] = $request->get('flight_1500km_number');
 		}
 
-		// club administrators of the users club only
 
-		// get the user we're trying to edit's club
-		$org = Org::where('gnz_code', $member->club)->first();
-
-		if (($org && Gate::allows('club-admin', $org)) || gate::allows('admin'))
+		// club administrators 
+		if (Gate::allows('any-club-admin'))
 		{
 			$form['date_of_birth'] = $request->get('date_of_birth');
 			$form['instructor'] = $request->get('instructor');
@@ -295,17 +324,21 @@ class MembersApiController extends ApiController
 			$form['aero_instructor'] = $request->get('aero_instructor');
 			$form['advanced_aero_instructor'] = $request->get('advanced_aero_instructor');
 			$form['auto_tow'] = $request->get('auto_tow');
+
+			// gnz things that club admins can also change
+			$form['membership_type'] = $request->get('membership_type');
+			$form['date_joined'] = $request->get('date_joined');
+			$form['club'] = $request->get('club');
+			
 		}
 
+		// GNZ admin only
 		if (Gate::allows('admin'))
 		{
 			$form['nzga_number'] = $request->get('nzga_number');
 			$form['comments'] = $request->get('comments');
 			$form['pending_approval'] = $request->get('pending_approval');
 			$form['non_member'] = $request->get('non_member');
-			$form['membership_type'] = $request->get('membership_type');
-			$form['club'] = $request->get('club');
-			$form['date_joined'] = $request->get('date_joined');
 			$form['gnz_family_member_number'] = $request->get('gnz_family_member_number');
 			$form['resigned'] = $request->get('resigned');
 			$form['previous_clubs'] = $request->get('previous_clubs');
