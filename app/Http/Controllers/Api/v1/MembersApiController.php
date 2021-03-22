@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use Illuminate\Http\Request;
 
 use App\Classes\MemberUtilities;
+use App\Classes\Settings;
 use App\Http\Requests;
 use App\Http\Controllers\Api\ApiController;
 use App\Models\Member;
@@ -12,6 +13,7 @@ use App\Models\MemberChangeLog;
 use App\Models\Org;
 use App\Models\Affiliate;
 use App\Exports\MembersExport;
+use App\Mail\RequestGnzApproval;
 use Carbon\Carbon;
 use Carbon\CarbonTimeZone;
 use DB;
@@ -20,6 +22,7 @@ use Excel;
 use Auth;
 use URL;
 use Mailgun;
+use Mail;
 use Schema;
 use Gate;
 
@@ -101,7 +104,7 @@ class MembersApiController extends ApiController
 
 
 	/**
-	 * Request GNZ approval for a user.
+	 * Set a GNZ number for a user.
 	 *
 	 * @param  int  $id
 	 * @return \Illuminate\Http\Response
@@ -233,6 +236,11 @@ class MembersApiController extends ApiController
 			$this->log_member_change($member, 'Requested Approval', 'pending_approval', $old_pending_approval, $member->pending_approval);
 			
 			// TODO send Email notification here
+			// get the GNZ admin email address
+			$settings = new Settings();
+			$gnz_email = $settings->get('email_new_member_to');
+			Mail::to($gnz_email)->send(new RequestGnzApproval($member));
+
 			return $this->success($member);
 		}
 		return $this->not_found();
@@ -329,7 +337,7 @@ class MembersApiController extends ApiController
 			$form['membership_type'] = $request->get('membership_type');
 			$form['date_joined'] = $request->get('date_joined');
 			$form['club'] = $request->get('club');
-			
+
 		}
 
 		// GNZ admin only
