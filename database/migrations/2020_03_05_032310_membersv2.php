@@ -29,6 +29,7 @@ class Membersv2 extends Migration
 			$table->string('email', 64)->nullable()->change();
 			$table->string('first_name', 64)->nullable()->change();
 			$table->string('last_name', 64)->nullable()->change();
+			$table->boolean('needs_gnz_approval')->nullable();
 		});
 
 
@@ -487,8 +488,6 @@ class Membersv2 extends Migration
 				}
 			}
 		}
-
-
 	}
 
 	/**

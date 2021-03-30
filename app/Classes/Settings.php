@@ -15,13 +15,13 @@ class Settings
 		
 		if ($org===null)
 		{
-			$query = $query->whereIsNull('org_id');
+			$query = $query->whereNull('org_id');
 		}
 		else
 		{
 			$query = $query->where('org_id', '=', $org->id);
 		}
-		$result = $query->get();
+		$result = $query->first();
 		return $result->value;
 	}
 }

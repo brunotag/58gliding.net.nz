@@ -14,6 +14,7 @@ use App\Models\Org;
 use App\Models\Affiliate;
 use App\Exports\MembersExport;
 use App\Mail\RequestGnzApproval;
+use App\Mail\ResignGnzMember;
 use Carbon\Carbon;
 use Carbon\CarbonTimeZone;
 use DB;
@@ -54,6 +55,7 @@ class MembersApiController extends ApiController
 		$member->middle_name = '';
 		$member->email = '';
 		$member->club = $org->gnz_code;
+		$member->needs_gnz_approval = true;
 		$member->created = Carbon::now(new CarbonTimeZone('Pacific/Auckland'));
 
 		if ( $request->input('submit_to_gnz') ) {
@@ -157,6 +159,7 @@ class MembersApiController extends ApiController
 		{
 			$old_member_type = $member->membership_type;
 			$member->membership_type = 'Resigned';
+			$member->pending_approval = false;
 
 			// get the resign date
 			$old_resign_date = $member->resigned;
@@ -164,6 +167,7 @@ class MembersApiController extends ApiController
 
 			// get the resign reason
 			$member->resigned_comment = $request->get('resigned_comment');
+			$member->needs_gnz_approval = true;
 
 			if ($member->save())
 			{
@@ -171,7 +175,14 @@ class MembersApiController extends ApiController
 				$this->log_member_change($member, 'Resign Member', 'membership_type', $old_member_type, $member->membership_type);
 				$this->log_member_change($member, 'Resign Member', 'resigned', $old_resign_date, $member->resigned);
 
-				// TODO send Email notification here
+				//  send Email notification
+				$settings = new Settings();
+				if ($gnz_email = $settings->get('email_new_member_to'))
+				{
+					Mail::to($gnz_email)->send(new ResignGnzMember($member));
+				}
+				
+
 				return $this->success($member);
 			}
 
@@ -238,8 +249,10 @@ class MembersApiController extends ApiController
 			// TODO send Email notification here
 			// get the GNZ admin email address
 			$settings = new Settings();
-			$gnz_email = $settings->get('email_new_member_to');
-			Mail::to($gnz_email)->send(new RequestGnzApproval($member));
+			if ($gnz_email = $settings->get('email_new_member_to'))
+			{
+				Mail::to($gnz_email)->send(new RequestGnzApproval($member));
+			}
 
 			return $this->success($member);
 		}

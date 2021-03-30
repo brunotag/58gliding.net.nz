@@ -160,14 +160,17 @@
 
 							<div class="mb-3">
 								<div>Date: </div>
-								<div class="col-4">
+								<div>
 									<v-date-picker  v-if="member.can_edit" id="start_date" v-model="resign_date" :locale="{ id: 'start_date', firstDayOfWeek: 2, masks: { weekdays: 'WW', L: 'DD/MM/YYYY' } }" :popover="{ visibility: 'click' }"></v-date-picker>
 								</div>
 								
 							</div>
 
 							<button class="btn btn-outline-dark float-right" v-on:click="showResignPanel=false">Cancel</button>
-							<button class="btn btn-primary" v-on:click="resignMember">Resign Member</button>
+							<button class="btn btn-primary" v-on:click="resignMember" :disabled="loadingResign">Resign Member</button>
+
+							<span v-show="loadingResign"><i  class="fas fa-cog fa-spin"></i> Please Wait</span>
+
 							
 						</div>
 
@@ -221,7 +224,8 @@
 						Approval Needed
 					</td>
 					<td>
-						<button v-if="!showAdmin" class="ml-2 btn btn-success" v-on:click="requestApproval">Request GNZ Approval</button>
+						<button v-if="!showAdmin" class="ml-2 btn btn-success" v-on:click="requestApproval" :disabled="loadingApproval">Request GNZ Approval</button>
+						<span v-show="loadingApproval"><i  class="fas fa-cog fa-spin"></i> Please Wait</span>
 					</td>
 				</tr>
 				<tr>
@@ -334,7 +338,9 @@
 				resign_reason: '',
 				resign_date: null,
 				waitingResign: false,
-				duplicates: [] // any member duplicates, used when approving a member
+				duplicates: [], // any member duplicates, used when approving a member,
+				loadingApproval: false,
+				loadingResign: false
 			}
 		},
 		mounted() {
@@ -406,11 +412,11 @@
 			},
 			resignMember: function() {
 				var that = this;
+				this.loadingResign = true;
 				// first resign the affiliates
 				this.member.affiliates.forEach(function(affiliate) {
 					if (!affiliate.resigned) {
 						if (affiliate.to_resign) that.resignAffiliate(affiliate);
-						//if (!affiliate.to_resign) can_resign_gnz = false; // can't resign GNZ as they are still active in this club
 					}
 				});
 
@@ -423,10 +429,12 @@
 					}
 					window.axios.post('/api/v1/members/' + this.memberId + '/resign-gnz', data).then(function (response) {
 						messages.$emit('success', 'Member Resigned from GNZ');
+						that.loadingResign = false;
 						that.loadMember();
 					}).catch(error => {
 						if (error.response) {
 							that.loadMember();
+							that.loadingResign = false;
 							messages.$emit('error', error.response.data.error);
 						}
 						
@@ -467,14 +475,13 @@
 			},
 			approveMember: function() {
 				// check the required items exist
-				
-					this.member.pending_approval=false;
-					this.saveMember();
-				
+				this.member.pending_approval=false;
+				this.member.needs_gnz_approval = false;
+				this.saveMember();
 			},
 			requestApproval: function() {
 				var that=this;
-				console.log(this.member);
+				this.loadingApproval = true;
 
 				var errors = false;
 				if (this.isEmpty(this.member.first_name)) { errors=true; messages.$emit('error', 'A first name is required'); }
@@ -489,6 +496,7 @@
 
 					window.axios.post('/api/v1/members/' + this.memberId + '/request-approval').then(function (response) {
 						that.member.pending_approval=true;
+						that.loadingApproval = false;
 						messages.$emit('success', 'Request Sent');
 					});
 				}
