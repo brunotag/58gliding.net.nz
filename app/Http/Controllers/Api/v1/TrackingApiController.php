@@ -126,6 +126,47 @@ class TrackingApiController extends ApiController
 	}
 
 
+		/* Raspberry Pi with SIM7600X 4G Hat
+
+	Example string:
+	+CGPSINFO: [<device-id>],[<lat>],[<N/S>],[<log>],[<E/W>],[<date>],[<UTC time>],[<alt>],[<speed>],[<course>]
+	e.g.
+	[
+		"ABC1234,3747.842055,S,17518.084915,E,090421,042051.0,24.6,0.0,",
+		"ABC1234,3747.842055,S,17518.084915,E,090421,042051.0,24.6,0.0,"
+	]
+
+	[0] [<device-id>]
+	[1] [<lat>]
+	[2] [<N/S>]
+	[3] [<log>]
+	[4] [<E/W>]
+	[5] [<date>]
+	[6] [<UTC time>]
+	[7] [<alt>]
+	[8] [<speed>]
+	[9] [<course>]
+	 */
+		public function pi(Request $request)
+		{
+			$data_array = $request->json()->all();
+			print_r($data_array);
+			
+			Log::info($data_array);
+
+			// get the device ID
+			$device_id = $data_array['id'];
+			foreach ($data_array['rows'] AS $data)
+			{
+				$row = explode(',', $data);
+				//DB::connection('ogn')->insert('insert into '. $table_name .' (thetime, alt, loc, hex, speed, course, type, rego, vspeed) values (?, ?, POINT(?,?), ?, ?, ?, ?, ?, ?)', [$timestamp, $alt, $lat, $long, $hex, $speed, $course, 9, substr($aircraft['rego'], 3,3), null]);
+			}
+			return $this->success([3, 4, 7]);
+		}
+
+
+
+
 	/* Chinese tracker mt600
 
 Example string:

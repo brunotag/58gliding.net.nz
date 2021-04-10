@@ -72,6 +72,7 @@ Route::group(['prefix'=>'v1', 'namespace' => 'Api\v1'], function()
 	Route::get('/electron/', 'TrackingApiController@electron');
 	Route::post('/spotnz', 'TrackingApiController@spotnz');
 	Route::get('/spotnz', 'TrackingApiController@spotnz');
+	Route::post('/pi', 'TrackingApiController@pi');
 
 	Route::resource('/ratings', 'RatingsApiController', ['only' => [
 		'index'
