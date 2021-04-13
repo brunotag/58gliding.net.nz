@@ -128,38 +128,64 @@ class TrackingApiController extends ApiController
 
 		/* Raspberry Pi with SIM7600X 4G Hat
 
+	// to save bandwidth, we calculate the time in seconds from Thu Dec 31 2020 00:00:00 GMT+0000
+	// so add 1618227895 seconds to get unix epoch time
+
 	Example string:
-	+CGPSINFO: [<device-id>],[<lat>],[<N/S>],[<log>],[<E/W>],[<date>],[<UTC time>],[<alt>],[<speed>],[<course>]
+	+CGPSINFO: [<time-stamp>],[<lat>],[<N/S>],[<log>],[<E/W>],[<date>],[<UTC time>],[<alt>],[<speed>],[<course>]
 	e.g.
 	[
-		"ABC1234,3747.842055,S,17518.084915,E,090421,042051.0,24.6,0.0,",
-		"ABC1234,3747.842055,S,17518.084915,E,090421,042051.0,24.6,0.0,"
-	]
-
-	[0] [<device-id>]
-	[1] [<lat>]
-	[2] [<N/S>]
-	[3] [<log>]
-	[4] [<E/W>]
-	[5] [<date>]
-	[6] [<UTC time>]
-	[7] [<alt>]
-	[8] [<speed>]
-	[9] [<course>]
+"		3747.840430,S,17518.099482,E,36.9,0.0
+	[0] [<lat>]
+	[1] [<N/S>]
+	[2] [<log>]
+	[3] [<E/W>]
+	[4] [<alt>]
+	[5] [<speed>]
+	[6] [<course>]
 	 */
 		public function pi(Request $request)
 		{
 			$data_array = $request->json()->all();
-			print_r($data_array);
+			//print_r($data_array);
 			
 			Log::info($data_array);
+
+			$current_table_name = '';
 
 			// get the device ID
 			$device_id = $data_array['id'];
 			foreach ($data_array['rows'] AS $data)
 			{
-				$row = explode(',', $data);
-				//DB::connection('ogn')->insert('insert into '. $table_name .' (thetime, alt, loc, hex, speed, course, type, rego, vspeed) values (?, ?, POINT(?,?), ?, ?, ?, ?, ?, ?)', [$timestamp, $alt, $lat, $long, $hex, $speed, $course, 9, substr($aircraft['rego'], 3,3), null]);
+				$row = explode(',', $data[2]);
+
+				// figure out table name
+				$nzdate = new DateTime();
+				$nzdate->setTimestamp((integer)$data[1]);
+
+				$nzdate->setTimezone(new DateTimeZone('Pacific/Auckland')); // convert UTC to NZ time
+				$table_name = 'data' . $nzdate->format('Ymd');
+				
+				// only check the DB table if this is a new date from previous
+				if ($table_name!=$current_table_name) {
+					if (!$this->check_table_exists($nzdate)) $this->make_table($nzdate);
+					$current_table_name = $table_name;
+				}
+
+				/* UNTESTED
+				$utcdate = new DateTime();
+				$utcdate->setTimestamp((integer)$data[1]);
+
+				$lat_decimal = $row[0]
+				$long_decimal = $row[2]
+				if ($data[1]=='S') $lat_decimal = -$lat_decimal;
+				if ($data[3]=='W') $long_decimal = -$long_decimal;
+				$timestamp = $utcdate->format('Y-m-d H:i:s');
+				$alt = $row[4];
+				$speed = $row[4];
+
+				DB::connection('ogn')->insert('insert into '. $table_name .' (thetime, alt, loc, hex, speed, course, type, rego, vspeed) values (?, ?, POINT(?,?), ?, ?, ?, ?, ?, ?)', [$timestamp, $alt, $lat, $long, $hex, $speed, $course, 9, substr($aircraft['rego'], 3,3), null]);
+				*/
 			}
 			return $this->success([3, 4, 7]);
 		}
