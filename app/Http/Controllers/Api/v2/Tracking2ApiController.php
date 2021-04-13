@@ -52,11 +52,18 @@ class Tracking2ApiController extends ApiController
 
 		if (!$request->has('device_id')) return $this->error('device ID is required');
 		
+		
 		$device_id = $request->input('device_id');
+
+		$ip = NULL;
+		if ($request->has('ip')) {
+			$ip = $request->input('ip');
+			echo 'hi';
+		}
 
 		$device = Device::updateOrCreate(
 			['device_id' => $device_id],
-			['last_turned_on' => Carbon::now()]
+			['last_turned_on' => Carbon::now(), 'ip' => $ip]
 		);
 
 		if ($device) return $this->success($device);

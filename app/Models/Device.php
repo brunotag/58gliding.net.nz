@@ -9,5 +9,5 @@ class Device extends Model
 	protected $connection = 'ogn';
 	protected $table = 'devices';
 
-	protected $fillable = ['device_id', 'last_turned_on'];
+	protected $fillable = ['device_id', 'last_turned_on', 'ip'];
 }

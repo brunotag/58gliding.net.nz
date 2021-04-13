@@ -25,6 +25,7 @@ class AddPiTracker extends Migration
 				$table->integer('id', true);
 				$table->string('device_id')->nullable();
 				$table->datetime('last_turned_on')->nullable();
+				$table->string('ip')->nullable();
 				$table->timestamps();
 				$table->index('device_id');
 			});
@@ -43,8 +44,8 @@ class AddPiTracker extends Migration
 			$table->dropColumn('pi');
 		});
 
-		if (!Schema::connection('ogn')->hasTable('devices')) {
-			Schema::cconnection('ogn')->drop('devices');
+		if (Schema::connection('ogn')->hasTable('devices')) {
+			Schema::connection('ogn')->drop('devices');
 		}
 	}
 }
