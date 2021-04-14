@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ApiController;
 use App\Http\Requests;
 use App\Models\TrackingDay;
 use App\Models\Aircraft;
+use App\Models\Aviator;
 use App\Models\Ping;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -31,6 +32,7 @@ include(app_path() . '/Classes/SRTMGeoTIFFReader.php');
  * 8) manual insertion API
  * 9) MT600 Chinese tracker
  * 10) InReach (US)
+ * 11) Pi
  */
 
 class TrackingApiController extends ApiController
@@ -155,39 +157,85 @@ class TrackingApiController extends ApiController
 
 			// get the device ID
 			$device_id = $data_array['id'];
+			// get the device
+			$aircraft = Aircraft::where('pi','=',$device_id)->first();
+			if (!$aircraft) return $this->error('This device is not linked to an aircraft');
+
+			// this will store all the IDs that we successfully store in the DB
+			$ids_done = [];
+
 			foreach ($data_array['rows'] AS $data)
 			{
-				$row = explode(',', $data[2]);
+				switch (substr($data[2], 0, 1))
+				{
+					// person ID
+					case '!':
+						$row = explode(',', $data[2]);
+						$member_id = substr($row[0], 1); // TBC
 
-				// figure out table name
-				$nzdate = new DateTime();
-				$nzdate->setTimestamp((integer)$data[1]);
+						// protected $fillable = ['timestamp', 'device_id', 'aircraft_id', 'member_id', 'strength'];
+						$aviator = new Aviator();
+						$aviator->timestamp = new DateTime();
+						$aviator->device_id = $device_id;
+						$aviator->aircraft_id = $aircraft->id;
+						$aviator->member_id = $member_id;
+						$aviator->strength = $row[1];
+						if ($aviator->save())
+						{
+							$ids_done[] = $data[0];
+						}
+						break;
+					default:
+						$row = explode(',', $data[2]);
 
-				$nzdate->setTimezone(new DateTimeZone('Pacific/Auckland')); // convert UTC to NZ time
-				$table_name = 'data' . $nzdate->format('Ymd');
-				
-				// only check the DB table if this is a new date from previous
-				if ($table_name!=$current_table_name) {
-					if (!$this->check_table_exists($nzdate)) $this->make_table($nzdate);
-					$current_table_name = $table_name;
+						// figure out table name
+						$nzdate = new DateTime();
+						$nzdate->setTimestamp((integer)$data[1]);
+
+						$nzdate->setTimezone(new DateTimeZone('Pacific/Auckland')); // convert UTC to NZ time
+						$table_name = 'data' . $nzdate->format('Ymd');
+						
+						// only check the DB table if this is a new date from previous
+						if ($table_name!=$current_table_name) {
+							if (!$this->check_table_exists($nzdate)) $this->make_table($nzdate);
+							$current_table_name = $table_name;
+						}
+
+						$utcdate = new DateTime();
+						$utcdate->setTimestamp((integer)$data[1]); 
+
+						$lat = $row[0];
+						$long = $row[2];
+
+						$lat_degrees = substr($lat, 0, strlen($lat)-9);
+						$long_degrees = substr($long, 0, strlen($long)-9);
+
+						$lat_minutes = substr($lat, strlen($lat)-9);
+						$long_minutes = substr($long, strlen($long)-9);
+						
+						$lat_decimal = $lat_degrees + ($lat_minutes/60);
+						$long_decimal = $long_degrees + ($long_minutes/60);
+
+						if ($row[1]=='S') $lat_decimal = -$lat_decimal;
+						if ($row[3]=='W') $long_decimal = -$long_decimal;
+
+						// $lat_decimal = $row[0];
+						// $long_decimal = $row[2];
+						$timestamp = $utcdate->format('Y-m-d H:i:s');
+						$alt = $row[4];
+						$speed = $row[5];
+						$course = null;
+						$hex = $aircraft->flarm;
+						if (isset($row[6])) $vspeed = $row[6];
+						else $vspeed = null;
+
+						$result = DB::connection('ogn')->insert('insert into '. $table_name .' (thetime, alt, loc, hex, speed, course, type, rego, vspeed) values (?, ?, POINT(?,?), ?, ?, ?, ?, ?, ?)', [$timestamp, $alt, $lat_decimal, $long_decimal, $hex, $speed, $course, 11, substr($aircraft['rego'], 3,3), $vspeed]);
+						if ($result) $ids_done[] = $data[0];
+						break;
 				}
 
-				/* UNTESTED
-				$utcdate = new DateTime();
-				$utcdate->setTimestamp((integer)$data[1]);
-
-				$lat_decimal = $row[0]
-				$long_decimal = $row[2]
-				if ($data[1]=='S') $lat_decimal = -$lat_decimal;
-				if ($data[3]=='W') $long_decimal = -$long_decimal;
-				$timestamp = $utcdate->format('Y-m-d H:i:s');
-				$alt = $row[4];
-				$speed = $row[4];
-
-				DB::connection('ogn')->insert('insert into '. $table_name .' (thetime, alt, loc, hex, speed, course, type, rego, vspeed) values (?, ?, POINT(?,?), ?, ?, ?, ?, ?, ?)', [$timestamp, $alt, $lat, $long, $hex, $speed, $course, 9, substr($aircraft['rego'], 3,3), null]);
-				*/
 			}
-			return $this->success([3, 4, 7]);
+			return $this->success($ids_done);
 		}
 
 

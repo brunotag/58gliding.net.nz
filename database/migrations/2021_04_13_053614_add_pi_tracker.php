@@ -30,6 +30,21 @@ class AddPiTracker extends Migration
 				$table->index('device_id');
 			});
 		}
+
+		/** Used to track when a device was last seen, so we can 
+			discover it when connecting it to an aircraft */
+		if (!Schema::hasTable('aviators')) {
+			Schema::create('aviators', function(Blueprint $table) {
+				$table->integer('id', true);
+				$table->datetime('timestamp')->nullable();
+				$table->string('device_id')->nullable();
+				$table->integer('aircraft_id')->nullable();
+				$table->integer('member_id')->nullable();
+				$table->integer('strength')->nullable();
+				$table->timestamps();
+				$table->index(['timestamp', 'aircraft_id']);
+			});
+		}
 	}
 
 	/**
@@ -46,6 +61,10 @@ class AddPiTracker extends Migration
 
 		if (Schema::connection('ogn')->hasTable('devices')) {
 			Schema::connection('ogn')->drop('devices');
+		}
+
+		if (Schema::hasTable('aviators')) {
+			Schema::drop('aviators');
 		}
 	}
 }
