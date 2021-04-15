@@ -43,6 +43,7 @@ Route::group(['prefix'=>'v2', 'namespace' => 'Api\v2'], function()
 	Route::get('/tracking/{dayDate}/{points}',  'Tracking2ApiController@points'); 
 	Route::get('/tracking/{dayDate}/aircraft/{key}',  'Tracking2ApiController@aircraft');
 	Route::post('/tracking/device-register',  'Tracking2ApiController@register'); 
+	Route::get('/timesheet/{dayDate}/{rego}',  'TimesheetApiController@aicraft');
 });
 
 
