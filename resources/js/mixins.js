@@ -176,6 +176,7 @@ module.exports = {
 				case 8: return 'GlidingOps'; break;
 				case 9: return 'MT600'; break;
 				case 10: return 'InReach US'; break;
+				case 11: return 'Pi'; break;
 				default: return 'Unknown'; break;
 			}
 		},
