@@ -191,6 +191,7 @@ class AircraftApiController extends ApiController
 			if ($request->exists('mt600')) $aircraft->mt600 = $request->get('mt600');
 			if ($request->exists('inreach_share')) $aircraft->inreach_share = $request->get('inreach_share');
 			if ($request->exists('inreach_imei')) $aircraft->inreach_imei = $request->get('inreach_imei');
+			if ($request->exists('pi')) $aircraft->pi = $request->get('pi');
 
 			// aircraft details
 			if ($request->exists('electric')) $aircraft->electric = $request->get('electric');
