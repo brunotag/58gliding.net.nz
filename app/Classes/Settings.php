@@ -22,6 +22,7 @@ class Settings
 			$query = $query->where('org_id', '=', $org->id);
 		}
 		$result = $query->first();
-		return $result->value;
+		if (isset($result->value)) return $result->value;
+		return false;
 	}
 }

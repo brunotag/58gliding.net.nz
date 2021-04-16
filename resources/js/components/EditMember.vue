@@ -482,6 +482,7 @@
 			requestApproval: function() {
 				var that=this;
 				this.loadingApproval = true;
+				this.saveMember();
 
 				var errors = false;
 				if (this.isEmpty(this.member.first_name)) { errors=true; messages.$emit('error', 'A first name is required'); }
@@ -492,8 +493,11 @@
 				if (this.isEmpty(this.member.city)) { errors=true; messages.$emit('error', 'A city is required'); }
 				if (this.isEmpty(this.member.date_of_birth) || !this.isValidDate(this.member.date_of_birth)) { errors=true; messages.$emit('error', 'A date of birth is required'); }
 
-				if (!errors) {
+				if (errors) {
+					this.loadingApproval = false;
+				}
 
+				if (!errors) {
 					window.axios.post('/api/v1/members/' + this.memberId + '/request-approval').then(function (response) {
 						that.member.pending_approval=true;
 						that.loadingApproval = false;
