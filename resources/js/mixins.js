@@ -65,6 +65,12 @@ module.exports = {
 		dateToNow: function(date) {
 			return Vue.prototype.$moment(date).fromNow();
 		},
+		secondsToMinutesAndHours: function(seconds) {
+			var hours = Math.floor(seconds/60/60);
+			var mins_remain = Math.round(seconds/60)%60;
+
+			return hours + ' hrs ' + mins_remain + ' mins';
+		},
 		shortDateToNow: function(date) {
 			var dateString = this.dateToNow(date);
 			dateString = dateString.replace(" seconds"," secs").replace(" minutes"," mins").replace(" hours"," hrs").replace(" second"," sec").replace(" minute"," min").replace(" hour"," hr");

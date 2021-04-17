@@ -36,13 +36,12 @@ class AddPiTracker extends Migration
 		if (!Schema::hasTable('aviators')) {
 			Schema::create('aviators', function(Blueprint $table) {
 				$table->integer('id', true);
-				$table->datetime('timestamp')->nullable();
+				$table->datetime('ts')->nullable();
 				$table->string('device_id')->nullable();
 				$table->integer('aircraft_id')->nullable();
 				$table->integer('member_id')->nullable();
 				$table->integer('strength')->nullable();
-				$table->timestamps();
-				$table->index(['timestamp', 'aircraft_id']);
+				$table->index(['ts', 'aircraft_id']);
 			});
 		}
 	}

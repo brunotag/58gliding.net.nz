@@ -299,7 +299,6 @@ class Tracking2ApiController extends ApiController
 				$points[$i]->altAvg = round($mean, 2);
 			}
 
-
 			$points = $this->_process_points_from_previous($points);
 			$points_to_output = Array();
 

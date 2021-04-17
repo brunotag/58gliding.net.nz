@@ -175,7 +175,7 @@ class TrackingApiController extends ApiController
 
 						// protected $fillable = ['timestamp', 'device_id', 'aircraft_id', 'member_id', 'strength'];
 						$aviator = new Aviator();
-						$aviator->timestamp = new DateTime();
+						$aviator->ts = new DateTime();
 						$aviator->device_id = $device_id;
 						$aviator->aircraft_id = $aircraft->id;
 						$aviator->member_id = $member_id;
