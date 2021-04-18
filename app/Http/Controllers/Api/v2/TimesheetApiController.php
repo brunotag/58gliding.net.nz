@@ -98,10 +98,10 @@ class TimesheetApiController extends ApiController
 
 			if ($point->agl!==null) {
 
-				// to trigger a take off we need to be 30m AGL or 20m/s in speed
-				if ($point->agl > 30 || $point->speed_next>20) {
+				// to trigger a take off we need to be at least 30m AGL
+				//if ($point->agl>20) {
 
-					// only start flying if we either have a ground speed >9m/s OR we don't have speed at all
+					// only start flying if we either have a ground speed >9m/s
 					if ($point->speed>9 || ($point->speed===null && $point->speed_next>9)) {
 						if ($status=='ground')
 						{
@@ -113,7 +113,7 @@ class TimesheetApiController extends ApiController
 						}
 						$status='flying';
 					}
-				}
+				//}
 				
 				if ($status=='flying')
 				{
@@ -127,7 +127,7 @@ class TimesheetApiController extends ApiController
 
 				// check if we've landed, and check the next point is also below our threashold 
 				// to filter out weird GPS data
-				if ((($point->agl < 30) && (($point->speed===null && $point->speed_next<9) || $point->speed<9)))
+				if ((($point->agl < 20) && (($point->speed===null && $point->speed_next<9) || $point->speed<9)))
 				{
 					if ($status=='flying')
 					{
@@ -149,7 +149,7 @@ class TimesheetApiController extends ApiController
 			foreach ($flights AS $key=>$flight)
 			{
 				// first remove this flight if it's less than 10 seconds long, as thats not actually a flight.
-				if ($flight['duration'] < 20) unset($flights[$key]);
+				if ($flight['duration'] < 20 && 0) unset($flights[$key]);
 				else
 				{
 					$query = "SELECT first_name, last_name, gnz_member.id, count(aviators.member_id) AS count, avg(aviators.strength) AS strength FROM aviators LEFT JOIN gnz_member ON aviators.member_id=gnz_member.id WHERE aircraft_id=".$aircraft->id." AND ts>'".$flight['start']."' AND ts<'" . $flight['end'] . "' GROUP BY aviators.member_id";

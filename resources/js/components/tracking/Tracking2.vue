@@ -475,7 +475,10 @@ html, body,
 					<span v-if="flight.duration<60">{{flight.duration}} seconds</span>
 					
 					<br>
-					<small class="mb-0 mt-0 caption">From {{formatTime(createDateFromMysql(flight.start))}} to  {{formatTime(createDateFromMysql(flight.end))}} </small>
+					<small class="mb-0 mt-0 ">From {{formatTime(createDateFromMysql(flight.start))}} to  {{formatTime(createDateFromMysql(flight.end))}} </small>
+					<div v-if="flight.pilots" v-for="pilot in flight.pilots">
+						<small>{{pilot.first_name}} {{pilot.last_name}} {{pilot.strength}}</small>
+					</div>
 				</div>
 			</div>
 		</div>
