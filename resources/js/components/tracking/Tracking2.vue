@@ -468,7 +468,7 @@ html, body,
 			</div>
 			<div v-for="(flight, index) in selectedAircraftLog" class="list-group-item list-group-item-action pl-2">
 
-				<h3 class="ml-0" style="font-weight: bold; position: absolute;">{{index}}</h3>
+				<h3 class="ml-0" style="font-weight: bold; position: absolute;">{{index+1}}</h3>
 				
 				<div style="margin-left: 2.5em">
 					<span v-if="flight.duration>60">{{secondsToMinutesAndHours(flight.duration)}}</span>
@@ -477,7 +477,11 @@ html, body,
 					<br>
 					<small class="mb-0 mt-0 ">From {{formatTime(createDateFromMysql(flight.start))}} to  {{formatTime(createDateFromMysql(flight.end))}} </small>
 					<div v-if="flight.pilots" v-for="pilot in flight.pilots">
-						<small>{{pilot.first_name}} {{pilot.last_name}} {{pilot.strength}}</small>
+						<small>
+							{{pilot.first_name}} 
+							{{pilot.last_name}} 
+							<span title="Average RSSI (-20 is very close, -100 is far away)">{{Math.round(pilot.strength)}}</span>/<span title="Number of times seen">{{pilot.hitcount}}</span>
+						</small>
 					</div>
 				</div>
 			</div>

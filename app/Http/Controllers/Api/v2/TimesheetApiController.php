@@ -58,16 +58,44 @@ class TimesheetApiController extends ApiController
 		$flight = 0;
 		$flights = [];
 		$prev_alt = null;
+		$search_pilots = false; // keep track of which tracker types have been used. So we only search for pilots if the tracker supports it.
 
+		$low_speed_threashold = 9;
 		$status = 'ground';
+
+
+		// check for duplicate points
 		foreach ($points AS $key=>$point)
 		{
+			if (isset($points[$key+1]))
+			{
+				$next_point = $points[$key+1];
+				if ($next_point->thetime==$point->thetime) 
+				{
+					unset($points[$key+1]);
+				}
+			}
+		}
+
+		// fix up the indexes of the array if we removed any duplicates
+		$points = array_values($points);
+
+
+		foreach ($points AS $key=>$point)
+		{
+			$no_altitude=false;
 
 			// check if we have altitude, if not maybe this is a SPOT or glitch in the data.
 			// Do the same as we do when graphing the data, and make this alt the same as previous.
 			if ($point->alt==null)
 			{
+				$no_altitude=true;
 				$point->alt = $prev_alt;
+
+				// low speed for devices with no altitude is a lot lower because 
+				// it's probably a SPOT, they might have not travelled far in 10 mins, 
+				// so speed is much lower
+				$low_speed_threashold = 1;
 			}
 
 			$point->gl = $this->_get_ground_level($point->lat, $point->lng);
@@ -78,42 +106,66 @@ class TimesheetApiController extends ApiController
 			$point->next_time = null;
 			$point->speed_next = null;
 			$point->next_agl = null;
+			$point->distanceToNext = null;
 
-			// calc the speed to the next point from the location data
+
+			// only search for pilots if we encounter a tracker that supports it
+			if ($point->type==11) $search_pilots=true;
+
+
+			// get the next point if it exists
 			if (isset($points[$key+1]))
 			{
+				$next_point = $points[$key+1];
+				// calc the speed to the next point from the location data
 				// $latitudeFrom, $longitudeFrom, $latitudeTo, $longitudeTo (in meters)
 				$point_time = new Carbon($point->thetime);
-				$next_point_time = new Carbon($points[$key+1]->thetime);
-				$point->distanceToNext = haversineGreatCircleDistance($points[$key]->lat, $points[$key]->lng, $points[$key+1]->lat, $points[$key+1]->lng);
+				$next_point_time = new Carbon($next_point->thetime);
+				$point->distanceToNext = haversineGreatCircleDistance($point->lat, $point->lng, $next_point->lat, $next_point->lng);
+				//if ($point->lat==$next_point->lat)
+				// if ($point->type==5)
+				// {
+				// 	print_r($point);
+				// 	print_r($next_point);
+				// 	print_r('----------');
+				// }
+				
 				$point->this_time = $point->thetime;
-				$point->next_time = $points[$key+1]->thetime;
+				$point->next_time = $next_point->thetime;
 				if ($point_time->diffInSeconds($next_point_time)!=0)
 				{
 					$point->speed_next = round($point->distanceToNext / ($point_time->diffInSeconds($next_point_time)));
 				}
-				$point->next_agl = $this->_get_ground_level($points[$key+1]->lat, $points[$key+1]->lng);
+				$point->next_agl = $this->_get_ground_level($next_point->lat, $next_point->lng);
 			}
 
 
-			if ($point->agl!==null) {
+			if ($point->agl!==null || $no_altitude) {
 
 				// to trigger a take off we need to be at least 30m AGL
-				//if ($point->agl>20) {
+				if ($point->agl>20 || $no_altitude) {
 
 					// only start flying if we either have a ground speed >9m/s
-					if ($point->speed>9 || ($point->speed===null && $point->speed_next>9)) {
-						if ($status=='ground')
+					if ($point->speed>$low_speed_threashold 
+						|| ($point->speed===null && $point->speed_next>$low_speed_threashold))
+					{
+						// check if the next point actually is off the ground (e.g. the current one might be a spot and the next one isn't)
+						//echo $point->next_agl; exit();
+						if ($point->next_agl!==null && $point->next_agl>20 || $point->next_agl===null)
 						{
-							// start a new flight
-							$flight++;
-							$flights[$flight]['start'] = $point->thetime;
-							$flights[$flight]['end'] = null;
-							$flights[$flight]['duration'] = null;
+							if ($status=='ground')
+							{
+								// start a new flight
+								$flight++;
+								$flights[$flight]['start'] = $point->thetime;
+								$flights[$flight]['end'] = null;
+								$flights[$flight]['duration'] = null;
+							}
+							$status='flying';
 						}
-						$status='flying';
+						
 					}
-				//}
+				}
 				
 				if ($status=='flying')
 				{
@@ -127,9 +179,10 @@ class TimesheetApiController extends ApiController
 
 				// check if we've landed, and check the next point is also below our threashold 
 				// to filter out weird GPS data
-				if ((($point->agl < 20) && (($point->speed===null && $point->speed_next<9) || $point->speed<9)))
+				if ($status=='flying' && ($point->agl < 25 || $no_altitude))
 				{
-					if ($status=='flying')
+					if (($point->speed===null && $point->speed_next<$low_speed_threashold) 
+						|| ($point->speed!==null && $point->speed<$low_speed_threashold && $point->speed_next<$low_speed_threashold))
 					{
 						$status='ground';
 					}
@@ -138,31 +191,38 @@ class TimesheetApiController extends ApiController
 			$point->status = $status;
 			$prev_alt = $point->alt;
 
-			$results[] = $point->thetime . ' ' . $status . ' speed: '. $point->speed . ' speedToNext: '.  $point->speed_next  . ' alt ' . $point->alt . ' agl ' . $point->agl; 
+			$results[] = $point->type . ' ' . $point->thetime . ' ' . $status. ' distance ' . $point->distanceToNext . ' speed: '. $point->speed . ' speedToNext: '.  $point->speed_next  . ' alt ' . $point->alt . ' agl ' . $point->agl; 
 			//. ' this_time: '. $point->this_time . ' next_time: '.  $point->next_time
 		}
 
 
-		// load the pilots who flew this flight
-		if ($aircraft)
+		// load the pilots who flew this flight, but only if we've found a tracker that supports it.
+		if ($aircraft )
 		{
 			foreach ($flights AS $key=>$flight)
 			{
-				// first remove this flight if it's less than 10 seconds long, as thats not actually a flight.
-				if ($flight['duration'] < 20 && 0) unset($flights[$key]);
+				// first remove this flight if it's less than 32 seconds long, as thats probably not a flight.
+				if ($flight['duration'] < 32) unset($flights[$key]);
 				else
 				{
-					$query = "SELECT first_name, last_name, gnz_member.id, count(aviators.member_id) AS count, avg(aviators.strength) AS strength FROM aviators LEFT JOIN gnz_member ON aviators.member_id=gnz_member.id WHERE aircraft_id=".$aircraft->id." AND ts>'".$flight['start']."' AND ts<'" . $flight['end'] . "' GROUP BY aviators.member_id";
-					if ($aviators = DB::select($query))
+					if ($search_pilots)
 					{
-						$flights[$key]['pilots'] = $aviators;
+						$query = "SELECT first_name, last_name, gnz_member.id, count(aviators.member_id) AS hitcount, avg(aviators.strength) AS strength FROM aviators LEFT JOIN gnz_member ON aviators.member_id=gnz_member.id WHERE aircraft_id=".$aircraft->id." AND ts>'".$flight['start']."' AND ts<'" . $flight['end'] . "' GROUP BY aviators.member_id ORDER BY hitcount DESC, strength DESC";
+						if ($aviators = DB::select($query))
+						{
+							$flights[$key]['pilots'] = $aviators;
+						}
+						else
+						{
+							$flights[$key]['pilots'] = null;
+						}
 					}
-					else
-					{
-						$flights[$key]['pilots'] = null;
-					}
+					
 				}
 			}
+
+			// fix up the indexes of the array if we removed any duplicates
+			$flights = array_values($flights);
 		}
 		
 
