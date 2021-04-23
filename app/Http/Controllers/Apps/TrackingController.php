@@ -63,4 +63,10 @@ class TrackingController extends Controller
 		$data['year']=$year;
 		return view('tracking/map2', $data);
 	}
+
+
+	public function tiles()
+	{
+		return view('tracking/tiles');
+	}
 }
