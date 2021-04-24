@@ -56,6 +56,10 @@ Route::group(['prefix'=>'v1', 'namespace' => 'Api\v1'], function()
 	Route::get('/aircraft/{rego}', 'AircraftApiController@rego')
 		->where('rego','(?i)ZK-[A-Z]{3}(?-i)');
 
+	Route::resource('/tiles', 'TilesApiController', ['only' => [
+		'index', 'update'
+	]]);
+
 	Route::resource('aircraft', 'AircraftApiController', ['only' => [
 		'index', 'show', 'update'
 	]]);

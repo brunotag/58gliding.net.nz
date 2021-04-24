@@ -13558,6 +13558,10 @@ th.center {
   border-radius: 0.2rem;
 }
 
+.btn-secondary {
+  color: #FFF;
+}
+
 #gridview .table th,
 #gridview .table td {
   padding: 0.12rem;
