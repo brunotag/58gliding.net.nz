@@ -62,12 +62,31 @@
 	
 
 		<div class="form-group col-md-6">
-			<label for="member_type">Type of Member To Add As</label> 
+			<label for="member_type">Type of Club Member To Add As</label>
+
+			<div class="alert alert-danger" role="alert">
+				Club Member Types haven't been set up for {{org.name}}. A club administrator can add them at <a href="/admin/member-types" class="alert-link">/admin/member-types</a>
+			</div>
+
 			<select v-model="membertype_id" name="member_type" id="member_type" v-if="memberTypes.length>0" class="form-control">
 				<option :value="null" disabled selected>Select type of member...</option>
 				<option v-for="memberType in memberTypes" :value="memberType.id">{{memberType.name}}</option>
 			</select>
 		</div>
+
+		
+
+		<div class="form-group col-md-6">
+			<label for="member_type">GNZ Member Type</label>
+
+			<select v-model="gnz_membertype_id" name="member_type" id="member_type" v-if="gnzMemberTypes.length>0" class="form-control">
+				<option :value="null" disabled selected>Select type of member...</option>
+				<option v-for="memberType in gnzMemberTypes" :value="memberType.id">{{memberType.name}}</option>
+			</select>
+			<span v-if="gnzMemberTypes.length==0">Loading...</span>
+		</div>
+
+
 
 		<div class="form-group col-md-6">
 			<label for="member_type">Start Date</label> 
@@ -114,7 +133,9 @@
 				first_name: null,
 				last_name: null,
 				membertype_id: null,
+				gnz_membertype_id: null,
 				memberTypes: [],
+				gnzMemberTypes: [],
 				start_date: null,
 				showAddNew: false,
 				showAddExisting: false,
@@ -129,14 +150,16 @@
 		methods: {
 			addNewMember: function()
 			{
+				var thedate = Vue.prototype.$moment(this.start_date).format("YYYY-MM-DD");
 				window.axios.post('/api/v1/members', {
 					org_id: this.org.id,
-					first_name: this.first_name, 
-					last_name: this.last_name, 
-					membertype_id: this.membertype_id
+					first_name: this.first_name,
+					last_name: this.last_name,
+					gnz_membertype_id: this.gnz_membertype_id,
+					membertype_id: this.membertype_id,
+					join_date: thedate
 				}).then(function (response) {
 					messages.$emit('success', 'Member added');
-					console.log(response);
 
 					var member = response.data.data;
 
@@ -160,6 +183,9 @@
 				window.axios.get('/api/v1/membertypes?org_id=' + that.org.id).then(function (response) {
 					that.memberTypes = response.data.data;
 				});
+				window.axios.get('/api/v1/membertypes?org_id=' + 30).then(function (response) {
+					that.gnzMemberTypes = response.data.data;
+				});
 			},
 			addExistingMember: function()
 			{
@@ -170,6 +196,7 @@
 					org_id: this.org.id, 
 					member_id: this.existingMemberId, 
 					membertype_id:this.membertype_id,
+					gnz_membertype_id: this.gnz_membertype_id,
 					join_date: thedate
 				}).then(function (response) {
 					messages.$emit('success', 'Member added');

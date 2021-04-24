@@ -30,6 +30,7 @@ class Membersv2 extends Migration
 			$table->string('first_name', 64)->nullable()->change();
 			$table->string('last_name', 64)->nullable()->change();
 			$table->boolean('needs_gnz_approval')->nullable();
+			$table->integer('gnz_membertype_id')->nullable();
 		});
 
 
@@ -250,52 +251,40 @@ class Membersv2 extends Migration
 			// get the GNZ org and setup the membertype types
 			if ($gnz = Org::where('slug', 'gnz')->first())
 			{
-				$rating = new Membertype;
-				$rating->name = "Flying";
-				$rating->slug = "flying";
-				$rating->org_id = $gnz->id;
-				$rating->save();
+				$type_resigned = new Membertype;
+				$type_resigned->name = "Resigned";
+				$type_resigned->slug = "resigned";
+				$type_resigned->org_id = $gnz->id;
+				$type_resigned->save();
 
-				$rating = new Membertype;
-				$rating->name = "Magazine only";
-				$rating->slug = "mag-only";
-				$rating->org_id = $gnz->id;
-				$rating->save();
+				$type_flying = new Membertype;
+				$type_flying->name = "Flying";
+				$type_flying->slug = "flying";
+				$type_flying->org_id = $gnz->id;
+				$type_flying->save();
 
-				$rating = new Membertype;
-				$rating->name = "Flying Family";
-				$rating->slug = "flying-family";
-				$rating->org_id = $gnz->id;
-				$rating->save();
+				$type_com = new Membertype;
+				$type_com->name = "Communication only";
+				$type_com->slug = "communication-only";
+				$type_com->org_id = $gnz->id;
+				$type_com->save();
 
-				$rating = new Membertype;
-				$rating->name = "Visiting Pilot 3 Month";
-				$rating->slug = "visiting-3-month";
-				$rating->org_id = $gnz->id;
-				$rating->save();
+				$type_visiting = new Membertype;
+				$type_visiting->name = "Visiting Pilot";
+				$type_visiting->slug = "visiting-pilot";
+				$type_visiting->org_id = $gnz->id;
+				$type_visiting->save();
 
-				$rating = new Membertype;
-				$rating->name = "Visiting Pilot Bulk";
-				$rating->slug = "visiting-bulk";
-				$rating->org_id = $gnz->id;
-				$rating->save();
-
-				$rating = new Membertype;
-				$rating->name = "Junior Family";
-				$rating->slug = "junior-family";
-				$rating->org_id = $gnz->id;
-				$rating->save();
-
-				$rating = new Membertype;
-				$rating->name = "Junior";
-				$rating->slug = "junior";
-				$rating->org_id = $gnz->id; 
-				$rating->save();
+				$type_youth = new Membertype;
+				$type_youth->name = "Youth";
+				$type_youth->slug = "youth";
+				$type_youth->org_id = $gnz->id; 
+				$type_youth->save();
 			}
 		}
  
 
-		// Member Club Positions e.g. Secratary, CFI etc
+		// Link member and membertype
 		if (!Schema::hasTable('member_membertype')) {
 			Schema::create('member_membertype', function (Blueprint $table) {
 				$table->increments('id');
@@ -390,6 +379,33 @@ class Membersv2 extends Migration
 		$members = DB::table('gnz_member')->get();
 		foreach ($members AS $member)
 		{
+			// set the correct GNZ member type
+			switch ($member->membership_type)
+			{
+				case 'Resigned':
+					$member->gnz_membertype_id = $type_resigned->id;
+					break;
+				case 'Flying':
+					$member->gnz_membertype_id = $type_flying->id;
+					break;
+				case 'Mag Only':
+					$member->gnz_membertype_id = $type_com->id;
+					break;
+				case 'VFP 3 Mth':
+					$member->gnz_membertype_id = $type_visiting->id;
+					break;
+				case 'Junior':
+					$member->gnz_membertype_id = $type_youth->id;
+					break;
+				default:
+					$member->gnz_membertype_id = null;
+					break;
+			}
+
+			// update the member. Not using eloquent otherwise it runs out of memory and couldn't be 
+			// bothered chunking
+			DB::table('gnz_member')->where('id', $member->id)->update(['gnz_membertype_id' => $member->gnz_membertype_id, 'membership_type'=>'']);
+
 			// handle previous clubs
 			if ($member->previous_clubs!=null && $member->previous_clubs!='')
 			{
@@ -488,6 +504,8 @@ class Membersv2 extends Migration
 				}
 			}
 		}
+
+		DB::statement('ALTER TABLE gnz_member DROP COLUMN membership_type');
 	}
 
 	/**
@@ -528,6 +546,12 @@ class Membersv2 extends Migration
 			$table->dropColumn('facebook');
 			$table->dropColumn('waypoint_id');
 			$table->dropColumn('description');
+		});
+
+
+		Schema::table('gnz_member', function (Blueprint $table) {
+			$table->dropColumn('needs_gnz_approval');
+			$table->dropColumn('gnz_membertype_id');
 		});
 
 	}

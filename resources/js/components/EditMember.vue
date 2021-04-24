@@ -46,6 +46,7 @@
 						<select v-model="member.gender" class="form-control">
 							<option value="M">Male</option>
 							<option value="F">Female</option>
+							<option :value="null">Not Specified</option>
 						</select>
 					</td>
 				</tr>
@@ -488,7 +489,6 @@
 				if (this.isEmpty(this.member.first_name)) { errors=true; messages.$emit('error', 'A first name is required'); }
 				if (this.isEmpty(this.member.last_name)) { errors=true; messages.$emit('error', 'A last name is required'); }
 				if (this.isEmpty(this.member.email)) { errors=true; messages.$emit('error', 'An email is required'); }
-				if (this.isEmpty(this.member.gender)) { errors=true; messages.$emit('error', 'A gender is required'); }
 				if (this.isEmpty(this.member.address_1)) { errors=true; messages.$emit('error', 'An address is required'); }
 				if (this.isEmpty(this.member.city)) { errors=true; messages.$emit('error', 'A city is required'); }
 				if (this.isEmpty(this.member.date_of_birth) || !this.isValidDate(this.member.date_of_birth)) { errors=true; messages.$emit('error', 'A date of birth is required'); }

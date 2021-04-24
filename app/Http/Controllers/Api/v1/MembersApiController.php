@@ -249,7 +249,6 @@ class MembersApiController extends ApiController
 			// TODO send Email notification here
 			// get the GNZ admin email address
 			$settings = new Settings();
-			echo $settings->get('email_new_member_to');
 			if ($gnz_email = $settings->get('email_new_member_to'))
 			{
 				Mail::to($gnz_email)->send(new RequestGnzApproval($member));

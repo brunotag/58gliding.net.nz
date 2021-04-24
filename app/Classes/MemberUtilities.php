@@ -48,6 +48,7 @@ class MemberUtilities {
 		$query->orderBy('last_name');
 		$select_string = "
 			gnz_member.*, 
+			membertypes.name as membership_type,
 			max(r_xcp.number) AS rating_xcp_number, 
 			max(r_qgp.number) AS rating_qgp_number,
 			max(IF(r_tow_pilot.id>0, true, false)) AS rating_tow_pilot,
@@ -72,7 +73,9 @@ class MemberUtilities {
 			});
 		}
 
-
+		$query->leftJoin('membertypes', function ($join) {
+			$join->on('gnz_member.gnz_membertype_id', '=', 'membertypes.id');
+		});
 
 
 		// Check if we are filtering to GNZ members only.
@@ -85,7 +88,6 @@ class MemberUtilities {
 				});
 			}
 		}
-		
 
 		// filter to a specific organisation
 		if (isset($org)) {

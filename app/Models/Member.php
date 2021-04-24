@@ -40,6 +40,12 @@ class Member extends Model
 		return $this->hasMany('App\Models\Affiliate');
 	}
 
+	// we are left joining this instead
+	// public function membertype()
+	// {
+	// 	return $this->belongsTo('App\Models\Membertype', 'gnz_membertype_id', 'id');
+	// }
+
 	// can the current logged in user edit this model?
 	public function getCanEditAttribute()
 	{
