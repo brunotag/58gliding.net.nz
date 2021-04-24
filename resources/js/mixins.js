@@ -192,6 +192,15 @@ module.exports = {
 		validateEmail: function(email) {
 			const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 			return re.test(String(email).toLowerCase());
-		}
+		},
+		strength: function(strength)
+		{
+			var string = '<span class="badge-pill" style="background-color: #B5BAC4;"></span>';
+			if (strength>-75) string = string + '<span class="badge-pill" style="background-color: #B2C570;"></span>';
+			if (strength>-65) string = string + '<span class="badge-pill" style="background-color: #A7CD36;"></span>';
+			if (strength>-55) string = string + '<span class="badge-pill" style="background-color: #4F9634;"></span>';
+			if (strength>-40) string = string + '<span class="badge-pill" style="background-color: #168236;"></span>';
+			return string;
+		},
 	}
 }

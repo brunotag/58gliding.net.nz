@@ -184,7 +184,16 @@ class TrackingApiController extends ApiController
 							$tile->hex = $hex;
 						}
 						$tile->last_seen = $utcdate->format('Y-m-d H:i:s');
-						$tile->last_strength = $row[1];
+						if (is_numeric($row[1]))
+						{
+							$tile->last_strength = $row[1];
+						}
+						else
+						{
+							$tile->last_strength = null;
+						}
+						
+
 						$tile->last_device_id = $device_id;
 						if (isset($aircraft->id)) $tile->last_aircraft_id = $aircraft->id;
 						$tile->save();
@@ -198,7 +207,16 @@ class TrackingApiController extends ApiController
 							$aviator->aircraft_id = $aircraft->id;
 							$aviator->tile_id = $tile->id;
 							$aviator->member_id = $tile->member_id;
-							$aviator->strength = $row[1];
+							if (is_numeric($row[1]))
+							{
+								$aviator->strength = $row[1];
+							}
+							else
+							{
+								$tile->last_strength = null;
+							}
+
+
 							if ($aviator->save())
 							{
 								$ids_done[] = $data[0];
