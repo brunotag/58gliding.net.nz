@@ -79,6 +79,7 @@ Route::group(['prefix'=>'v1', 'namespace' => 'Api\v1'], function()
 	Route::resource('/ratings', 'RatingsApiController', ['only' => [
 		'index'
 	]]);
+	Route::get('/ratings/{id}/last-number', 'RatingMemberApiController@lastRatingNumber');
 
 	// Not sure an uploads API is a good idea, as we can't handle permissions on it.
 	// Route::resource('/uploads', 'UploadsApiController', ['only' => [

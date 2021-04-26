@@ -7,7 +7,7 @@
 <template>
 	<div>
 
-		<div v-if="clubAdmin">
+		<div v-if="clubAdmin || editAwards">
 			<button class="btn btn-outline-dark mb-2" style="float:right;" v-on:click="deleteRating()">Delete Rating</button>
 		</div>
 	
@@ -18,6 +18,10 @@
 			<tr>
 				<td>Granted</td>
 				<td>{{formatDate(rating.awarded)}}</td>
+			</tr>
+			<tr>
+				<td>Number</td>
+				<td>{{rating.number}}</td>
 			</tr>
 			<tr>
 				<td>Expires</td>
@@ -98,11 +102,13 @@
 				files: null,
 				uploading: false,
 				clubAdmin: false,
+				editAwards: false
 			}
 		},
 		mounted() {
 			this.load();
 			this.clubAdmin = window.Laravel.clubAdmin;
+			this.editAwards = window.Laravel.editAwards;
 		},
 		methods: {
 			load: function() {

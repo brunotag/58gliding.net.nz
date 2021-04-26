@@ -182,13 +182,6 @@ class RatingMemberApiController extends ApiController
 			}
 		}
 
-		// if this is a numbered rating, get the max number in the database
-		if ($rating->numbered) {
-			$number = RatingMember::where('rating_id', $rating->id)->max('number');
-			$number++;
-			$ratingMember->number=$number;
-		}
-
 		$awarded = new Carbon($request->input('awarded'));
 
 		$ratingMember->rating_id=$request->input('rating_id');
@@ -278,6 +271,8 @@ class RatingMemberApiController extends ApiController
 
 
 
+
+
 	/**
 	 * Update the specified resource in storage.
 	 *
@@ -287,7 +282,7 @@ class RatingMemberApiController extends ApiController
 	 */
 	public function update(Request $request, $id)
 	{
-		//
+		
 	}
 
 	/**
@@ -312,7 +307,7 @@ class RatingMemberApiController extends ApiController
 		}
 
 		// check we are club admin for the person's org we are editing
-		if (Gate::denies('club-admin', $org)) return $this->denied();
+		if (Gate::denies('club-admin', $org) && Gate::denies('edit-awards')) return $this->denied();
 
 		if ($ratingMember->delete())
 		{
@@ -367,4 +362,29 @@ class RatingMemberApiController extends ApiController
 		}
 		return $this->error(); 
 	}
+
+
+
+
+	public function lastRatingNumber(Request $request, $rating_id)
+	{
+		// get the given rating
+		if (!$rating = Rating::find($rating_id)) return $this->not_found('Rating Not Found');
+
+		// check it should be numbered
+		if (!$rating->numbered) $this->error('This rating is not numbered');
+
+		// get the max (should be last) known number
+		if ($number = RatingMember::where('rating_id', $rating_id)->max('number'))
+		{
+			return $this->success($number);
+		}
+		
+		return $this->success(0); 
+	}
+
+
+
+
+
 }
