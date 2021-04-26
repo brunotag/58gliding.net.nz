@@ -78,14 +78,21 @@ class RatingMemberApiController extends ApiController
 	public function get(Request $request, $member_id, $rating_member_id)
 	{
 
+
+		// refetch the rating now we can check if we are a club admin
+		$with_list[] = 'rating';
+		$with_list[] = 'member';
+		$with_list[] = 'uploads';
+
 		$rating_member = RatingMember::where('id', $rating_member_id)
-			->with(['rating', 'member', 'uploads'])
+			->with($with_list)
 			->first();
 
 		if (!$member_org = Org::where('gnz_code', $rating_member->member->club)->first())
 		{
 			return $this->denied();
 		}
+
 		// only club admins, awards officer can view ratings including medical documents
 		if(!(Gate::check('club-admin', $member_org) || 
 			Gate::check('edit-awards')))
@@ -141,6 +148,8 @@ class RatingMemberApiController extends ApiController
 			return $this->error('Rating not found');
 		}
 
+
+
 		// check the member exists first
 		if (!$member = Member::where('id', $request->input('member_id'))->first())
 		{
@@ -159,6 +168,19 @@ class RatingMemberApiController extends ApiController
 		{
 			return $this->denied();
 		}
+
+		// check for awards officer only awards
+		if (!Gate::check('edit-awards'))
+		{
+			switch ($rating->name)
+			{
+				case 'Cross Country Pilot (XCP)':
+				case 'QGP':
+					return $this->denied('Only the awards officer can give this rating');
+					break;
+			}
+		}
+
 
 
 		$ratingMember = new RatingMember;
@@ -184,9 +206,13 @@ class RatingMemberApiController extends ApiController
 
 		$awarded = new Carbon($request->input('awarded'));
 
+		if ($request->has('ratingNumber'))
+		{
+			$ratingMember->number = $request->input('ratingNumber');
+		}
+
 		$ratingMember->rating_id=$request->input('rating_id');
 		$ratingMember->member_id=$request->input('member_id');
-		$ratingMember->number=$request->input('number');
 		$ratingMember->awarded= $awarded->toDateString();
 		$ratingMember->notes=$request->input('notes', '');
 		$ratingMember->authorising_member_id=$request->input('authorising_member_id');

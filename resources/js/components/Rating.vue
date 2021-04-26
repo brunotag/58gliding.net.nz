@@ -7,7 +7,7 @@
 <template>
 	<div>
 
-		<div v-if="clubAdmin || editAwards">
+		<div>
 			<button class="btn btn-outline-dark mb-2" style="float:right;" v-on:click="deleteRating()">Delete Rating</button>
 		</div>
 	
@@ -57,7 +57,7 @@
 					</ul>
 
 					
-					<div class="form-inline form-group" v-if="allowsEdit">
+					<div class="form-inline form-group">
 						<label class="mr-1">Upload Files:</label>
 						<div class="custom-file col-3 mr-2">
 							<input type="file" class="custom-file-input" id="file" ref="file" multiple  v-on:change="onChangeFileUpload()" />
@@ -118,6 +118,10 @@
 					that.loading = false;
 					that.rating = response.data.data;
 					that.rating.timeToExpire = moment(that.rating.expires).fromNow();
+				}).catch(function (error) {
+					// handle error
+					messages.$emit('error', 'Error given: ' + error.response.data.error);
+					that.loading = false;
 				});
 			},
 			deleteFile: function(upload) {
