@@ -2,8 +2,8 @@
 div.chart-container {
 	text-align: center;
 	width: 100%;
-	padding-left: 20px;
-	padding-right: 20px;
+	padding-left: 5px;
+	padding-right: 5px;
 }
 div.chart {
 	width: 100%;
@@ -76,18 +76,28 @@ div.chart {
 			chart: {
 				height: that.height,
 				zoomType: 'x',
-				backgroundColor:'rgba(255, 255, 255, 0.0)'
+				backgroundColor:'rgba(255, 255, 255, 0.0)',
+				resetZoomButton: {
+				    position: {
+				        // align: 'right', // by default
+				        // verticalAlign: 'top', // by default
+				        x: 0,
+				        y: 50
+				    }
+				}
 			},
 			yAxis: {
 				title: {
-					text: "Altitude (feet)"
+					text: "Altitude (feet)",
+					enabled: false
 				}
 			},
 			xAxis: {
 				type: 'datetime',
 				crosshair: true,
 				title: {
-					text:  null
+					text:  null,
+					enabled: false
 				}
 			},
 			legend: {
@@ -135,8 +145,8 @@ div.chart {
 				positioner: function () {
 					return {
 						//right aligned
-						x: 100,
-						y: 10 // align to title
+						x: 40,
+						y: 5 // align to title
 					};
 				},
 				borderWidth: 0,

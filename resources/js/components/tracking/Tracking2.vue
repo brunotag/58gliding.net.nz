@@ -239,7 +239,7 @@ html, body,
 						<th v-show="showLegend" 
 							v-on:click="legendShowAgl = !legendShowAgl;">
 							<a href="javascript:void(0)" v-show="legendShowAgl" v-on:click="legendSort=['hasAlt','alt']; legendSortDirection=['desc','desc']">AGL</a>
-							<a href="javascript:void(0)" v-show="!legendShowAgl" v-on:click="legendSort=['hasAgl','agl']; legendSortDirection=['desc','desc']">QNH</a>
+							<a href="javascript:void(0)" v-show="!legendShowAgl" v-on:click="legendSort=['hasAgl','agl']; legendSortDirection=['desc','desc']">ALT</a>
 						</th>
 						<th v-show="showLegend" v-on:click="legendSort=['lastSeen']; legendSortDirection=['desc']">
 							<a href="javascript:void(0)">Seen</a>
@@ -294,7 +294,6 @@ html, body,
 					<label for="follow"><input name="follow" id="follow" type="checkbox" v-on:click="follow()" v-model="optionFollow" :value="true"> Follow</label>
 				</div>
 				<div class="detail">{{formatAltitudeFeet(heightAgl(selectedPoint.alt, selectedPoint.gl))}} AGL</div>
-				<div class="detail">{{formatAltitudeFeet(selectedPoint.alt)}} QNH</div>
 				<div class="detail" v-if="selectedPoint.speed!=null">
 					GS {{ Math.round(selectedPoint.speed / 1.852) }} kt
 				</div>
@@ -307,17 +306,19 @@ html, body,
 				<div class="detail" v-if="selectedPoint.vspeed==null">
 					<span class="fa fa-arrows-alt-v"></span> n/a
 				</div>
-				<div class="detail" v-if="selectedPoint.course!=null">
-					{{selectedPoint.course}}&deg;
-				</div>
 				<div class="detail">{{shortDateToNow(createDateFromMysql(selectedPoint.thetime))}}</div>
 				<div class="detail">{{formatType(selectedPoint.type)}}</div>
 				<div class="detail">
-					<button class="fa fa-chart-line btn-outline-dark btn btn-xs  ml-2 mt-1 pr-2 pl-2" v-on:click="showCoordDetails=!showCoordDetails" v-bind:class="[showCoordDetails ? 'active' : '']"></button>
+					<button class="fa fa-chart-line btn-outline-dark btn btn-xs  ml-1 mt-1 pr-2 pl-2" v-on:click="showCoordDetails=!showCoordDetails" v-bind:class="[showCoordDetails ? 'active' : '']"></button>
+					<button class="fa fa-list-ul btn-outline-dark btn btn-xs  ml-1 mt-1 pr-2 pl-2" v-on:click="showPanel('showFlightLog')" v-bind:class="[showFlightLog ? 'active' : '']"></button>
 				</div>
 			</div>
 
 			<div v-if="showCoordDetails" class="flex-row">
+				<div class="detail">{{formatAltitudeFeet(selectedPoint.alt)}} ALT</div>
+				<div class="detail" v-if="selectedPoint.course!=null">
+					{{selectedPoint.course}}&deg;
+				</div>
 				<div class="detail">Lat {{ selectedPoint.lat.toFixed(5)}}</div>
 				<div class="detail">Lng {{ selectedPoint.lng.toFixed(5) }}</div>
 				<div class="detail"><a v-bind:href="'https://www.google.com/maps/place/' + selectedPoint.lat + '+' + selectedPoint.lng + '/'">Google Maps</a></div>
@@ -453,6 +454,42 @@ html, body,
 
 	</div>
 
+
+	<div class="day-selector" v-show="showFlightLog">
+
+		<div class="list-group" >
+			<button class="btn btn-outline-dark btn-sm mb-2" v-on:click="showFlightLog = !showFlightLog">Close</button>
+			<button class="btn btn-outline-dark btn-sm mb-2" v-on:click="loadFlightLog">Reload</button>
+		</div>
+
+		<div class="list-group">
+			<div v-if="selectedAircraftLog.length==0">
+				No Flights Detected
+			</div>
+			<div v-for="(flight, index) in selectedAircraftLog" class="list-group-item list-group-item-action pl-2">
+
+				<h3 class="ml-0" style="font-weight: bold; position: absolute;">{{index+1}}</h3>
+				
+				<div style="margin-left: 2.5em">
+					<span v-if="flight.duration>60">{{secondsToMinutesAndHours(flight.duration)}}</span>
+					<span v-if="flight.duration<60">{{flight.duration}} seconds</span>
+					
+					<br>
+					<small class="mb-0 mt-0 ">From {{formatTime(createDateFromMysql(flight.start))}} to  {{formatTime(createDateFromMysql(flight.end))}} </small>
+					<div v-if="flight.pilots" v-for="pilot in flight.pilots">
+						<small>
+							{{pilot.first_name}} 
+							{{pilot.last_name}} 
+							<span title="Average RSSI (-20 is very close, -100 is far away)">{{Math.round(pilot.strength)}}</span>/<span title="Number of times seen">{{pilot.hitcount}}</span>
+						</small>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</div>
+
+
 </div>
 </template>
 
@@ -480,6 +517,7 @@ html, body,
 				showLegend: true,
 				showCoordDetails: false,
 				showAircraftDetails: false,
+				showFlightLog: false,
 
 				legendShowAgl: true,
 				legendSort: ['hasAircraft','legend'],
@@ -493,6 +531,7 @@ html, body,
 				selectedAircraftKey: null,
 				selectedAircraftTrack: [], // all the track data
 				selectedAircraftTrackGeoJson: [], // used by mapbox
+				selectedAircraftLog: [], // current list of flights and their times for the selected aircraft
 				selectedMarker: null, // the larger marker on the map showing the selected point.
 				selectedPoint: null, // the details of the currently selected point. Defaults to the last point received.
 				//selectedAltitudes: [], // selected items altitude data for the chart
@@ -773,7 +812,8 @@ html, body,
 			this.showDaySelector = false;
 			this.showZoomMenu = false;
 			this.showTaskSelector = false;
-
+			this.showFlightLog = false;
+			
 			// open it if it's closed
 			if (current_state==false) this[name]=true;
 		},
@@ -854,7 +894,7 @@ html, body,
 		loadTracks: function() {
 			this.loading=true;
 
-			var pings = 5;
+			var pings = 1;
 			//if (this.showTrails==false) pings=3;
 			var that = this;
 
@@ -872,9 +912,29 @@ html, body,
 				that.createTracks()
 			});
 		},
+		loadFlightLog: function() {
+			var that = this;
+			this.loading=true;
+			this.loadingTasks = true;
+			window.axios.get('/api/v2/timesheet/' + this.flyingDay + '/' + this.selectedAircraft.rego).then(function (response) {
+
+				that.selectedAircraftLog = response.data.data[0];
+				that.loading=false;
+			});
+		},
 		selectAircraft: function(aircraft) {
+
 			var that = this;
 			var from = 0;
+
+			// cancel all other requests
+			for (var i=0; i<this.aircraft.length; i++) {
+				if (this.aircraft[i].hasOwnProperty('request')) {
+					this.aircraft[i].request.cancel();
+				}
+			}
+
+			aircraft.request = axios.CancelToken.source();
 
 			this.selectedAircraft = aircraft;
 
@@ -892,8 +952,11 @@ html, body,
 			this.selectedAircraftKey=this.selectedAircraft.key;
 			this.loading=true;
 
+			// also load the flight log at the same time
+			this.loadFlightLog();
+
 			// load the data
-			window.axios.get('/api/v2/tracking/' + that.flyingDay + '/aircraft/' + aircraft.key + '?from=' + from).then(function (response) {
+			window.axios.get('/api/v2/tracking/' + that.flyingDay + '/aircraft/' + aircraft.key + '?from=' + from, { cancelToken: aircraft.request.token }).then(function (response) {
 
 				that.loading=false;
 				var newData = response.data.data.points;
@@ -1110,7 +1173,7 @@ html, body,
 				this.loadTracks();
 				if (this.selectedAircraft) this.selectAircraft(this.selectedAircraft);
 			}
-			this.timeoutTimer = setTimeout(this.timerLoop, 15000); // thirty seconds
+			this.timeoutTimer = setTimeout(this.timerLoop, 30000); // thirty seconds
 		},
 		follow: function() {
 			var that = this;

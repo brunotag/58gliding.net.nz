@@ -42,6 +42,8 @@ Route::group(['prefix'=>'v2', 'namespace' => 'Api\v2'], function()
 	// all pings for all aircraft on a specific day
 	Route::get('/tracking/{dayDate}/{points}',  'Tracking2ApiController@points'); 
 	Route::get('/tracking/{dayDate}/aircraft/{key}',  'Tracking2ApiController@aircraft');
+	Route::post('/tracking/device-register',  'Tracking2ApiController@register'); 
+	Route::get('/timesheet/{dayDate}/{rego}',  'TimesheetApiController@aicraft');
 });
 
 
@@ -72,10 +74,12 @@ Route::group(['prefix'=>'v1', 'namespace' => 'Api\v1'], function()
 	Route::get('/electron/', 'TrackingApiController@electron');
 	Route::post('/spotnz', 'TrackingApiController@spotnz');
 	Route::get('/spotnz', 'TrackingApiController@spotnz');
+	Route::post('/pi', 'TrackingApiController@pi');
 
 	Route::resource('/ratings', 'RatingsApiController', ['only' => [
 		'index'
 	]]);
+	Route::get('/ratings/{id}/last-number', 'RatingMemberApiController@lastRatingNumber');
 
 	// Not sure an uploads API is a good idea, as we can't handle permissions on it.
 	// Route::resource('/uploads', 'UploadsApiController', ['only' => [

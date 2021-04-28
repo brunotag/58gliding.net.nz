@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ApiController;
 use App\Http\Requests;
 use App\Models\TrackingDay;
 use App\Models\Aircraft;
+use App\Models\Aviator;
 use App\Models\Ping;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -31,6 +32,7 @@ include(app_path() . '/Classes/SRTMGeoTIFFReader.php');
  * 8) manual insertion API
  * 9) MT600 Chinese tracker
  * 10) InReach (US)
+ * 11) Pi
  */
 
 class TrackingApiController extends ApiController
@@ -74,7 +76,7 @@ class TrackingApiController extends ApiController
 			$data = $request;
 		}
 
-		Log::info($data);
+		//Log::info($data);
 
 		// find the aircraft specified
 		$queryAircraft = Aircraft::query();
@@ -126,6 +128,119 @@ class TrackingApiController extends ApiController
 	}
 
 
+		/* Raspberry Pi with SIM7600X 4G Hat
+
+	// to save bandwidth, we calculate the time in seconds from Thu Dec 31 2020 00:00:00 GMT+0000
+	// so add 1618227895 seconds to get unix epoch time
+
+	Example string:
+	+CGPSINFO: [<time-stamp>],[<lat>],[<N/S>],[<log>],[<E/W>],[<date>],[<UTC time>],[<alt>],[<speed>],[<course>]
+	e.g.
+	[
+"		3747.840430,S,17518.099482,E,36.9,0.0
+	[0] [<lat>]
+	[1] [<N/S>]
+	[2] [<log>]
+	[3] [<E/W>]
+	[4] [<alt>]
+	[5] [<speed>]
+	[6] [<course>]
+	 */
+		public function pi(Request $request)
+		{
+			$data_array = $request->json()->all();
+			//print_r($data_array);
+			
+			Log::info($data_array);
+
+			$current_table_name = '';
+
+			// get the device ID
+			$device_id = $data_array['id'];
+			// get the device
+			$aircraft = Aircraft::where('pi','=',$device_id)->first();
+			if (!$aircraft) return $this->error('This device is not linked to an aircraft');
+
+			// this will store all the IDs that we successfully store in the DB
+			$ids_done = [];
+
+			foreach ($data_array['rows'] AS $data)
+			{
+				switch (substr($data[2], 0, 1))
+				{
+					// person ID
+					case '!':
+						$row = explode(',', $data[2]);
+						$member_id = substr($row[0], 1); // TBC
+
+						// protected $fillable = ['timestamp', 'device_id', 'aircraft_id', 'member_id', 'strength'];
+						$aviator = new Aviator();
+						$aviator->ts = new DateTime();
+						$aviator->device_id = $device_id;
+						$aviator->aircraft_id = $aircraft->id;
+						$aviator->member_id = $member_id;
+						$aviator->strength = $row[1];
+						if ($aviator->save())
+						{
+							$ids_done[] = $data[0];
+						}
+						break;
+					default:
+						$row = explode(',', $data[2]);
+
+						// figure out table name
+						$nzdate = new DateTime();
+						$nzdate->setTimestamp((integer)$data[1]);
+
+						$nzdate->setTimezone(new DateTimeZone('Pacific/Auckland')); // convert UTC to NZ time
+						$table_name = 'data' . $nzdate->format('Ymd');
+						
+						// only check the DB table if this is a new date from previous
+						if ($table_name!=$current_table_name) {
+							if (!$this->check_table_exists($nzdate)) $this->make_table($nzdate);
+							$current_table_name = $table_name;
+						}
+
+						$utcdate = new DateTime();
+						$utcdate->setTimestamp((integer)$data[1]); 
+
+						$lat = $row[0];
+						$long = $row[2];
+
+						$lat_degrees = substr($lat, 0, strlen($lat)-9);
+						$long_degrees = substr($long, 0, strlen($long)-9);
+
+						$lat_minutes = substr($lat, strlen($lat)-9);
+						$long_minutes = substr($long, strlen($long)-9);
+						
+						$lat_decimal = $lat_degrees + ($lat_minutes/60);
+						$long_decimal = $long_degrees + ($long_minutes/60);
+
+						if ($row[1]=='S') $lat_decimal = -$lat_decimal;
+						if ($row[3]=='W') $long_decimal = -$long_decimal;
+
+						// $lat_decimal = $row[0];
+						// $long_decimal = $row[2];
+						$timestamp = $utcdate->format('Y-m-d H:i:s');
+						$alt = $row[4];
+						$speed = $row[5];
+						$course = null;
+						$hex = $aircraft->flarm;
+						if (isset($row[6])) $vspeed = $row[6];
+						else $vspeed = null;
+
+						$result = DB::connection('ogn')->insert('insert into '. $table_name .' (thetime, alt, loc, hex, speed, course, type, rego, vspeed) values (?, ?, POINT(?,?), ?, ?, ?, ?, ?, ?)', [$timestamp, $alt, $lat_decimal, $long_decimal, $hex, $speed, $course, 11, substr($aircraft['rego'], 3,3), $vspeed]);
+						if ($result) $ids_done[] = $data[0];
+						break;
+				}
+
+			}
+			return $this->success($ids_done);
+		}
+
+
+
+
 	/* Chinese tracker mt600
 
 Example string:
@@ -151,7 +266,7 @@ Example string:
 	public function mt600(Request $request)
 	{
 		$request_data = $request->json()->all();
-		Log::info($request_data);
+		//Log::info($request_data);
 
 		$data = explode(',', $request_data['data']);
 		if (!isset($data[0])) return false;
@@ -242,7 +357,7 @@ Example string:
 			$request_data = $request;
 		}
 
-		Log::info($request_data);
+		//Log::info($request_data);
 
 		// get aircraft details
 		$queryAircraft = Aircraft::query();
@@ -311,7 +426,7 @@ Example string:
 		{
 
 			$xml = simplexml_load_string($request->getContent());
-			Log::info(print_r($xml, 1));
+			//Log::info(print_r($xml, 1));
 			
 			if (!isset($xml->devId)) {
 				Log::info("Couldn't find devId on btraced XML");
@@ -409,7 +524,7 @@ Example string:
 	// SPOTNZ = type 5
 	public function spotnz(Request $request)
 	{
-		Log::info($request->getContent());
+		//Log::info($request->getContent());
 
 		$data['messageId'] = 0;
 		$data['response'] = 'OK';
@@ -496,7 +611,7 @@ Example string:
 	public function overland(Request $request)
 	{
 		//Log::info($request);
-		Log::info($request->getContent());
+		//Log::info($request->getContent());
 
 		$obj = json_decode($request->getContent());
 
@@ -738,8 +853,8 @@ Example string:
 				if ($json = file_get_contents($aircraft_url))
 				{
 					$obj = json_decode($json);
-					Log::info('SPOT JSON:');
-					Log::info($json);
+					//Log::info('SPOT JSON:');
+					//Log::info($json);
 
 					// check if we have messages for this ID
 					if (isset($obj->response->feedMessageResponse))

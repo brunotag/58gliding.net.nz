@@ -133,6 +133,12 @@
 						<td>IMEI code e.g. 861585042912480</td>
 					</tr>
 					<tr>
+						<td class="table-label">Pi Tracker</td>
+						<td><input type="text" v-model="aircraft.pi" class="form-control"></td>
+						<td><button class="btn btn-primary btn-sm" v-on:click="save()">Save</button></td>
+						<td>Pi Serial Number e.g. 100000002519d55a</td>
+					</tr>
+					<tr>
 
 						<td class="table-label">Cellular Tracking</td>
 						<td class="table-label" colspan=3>

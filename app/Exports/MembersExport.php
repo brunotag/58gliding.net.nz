@@ -133,6 +133,7 @@ class MembersExport implements FromCollection, WithHeadings, WithMapping
 					$qgp_date = $rating->awarded;
 					break;
 				case 'XCP':
+				case 'Cross Country Pilot (XCP)':
 					$xcp = $rating->number; 
 					$xcp_date = $rating->awarded; 
 					break;
