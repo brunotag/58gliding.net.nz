@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests;
 use App\Http\Controllers\Api\ApiController;
 use App\User;
+use App\RoleUser;
 
 class UsersApiController extends ApiController
 {
@@ -34,6 +35,13 @@ class UsersApiController extends ApiController
 
 		$usersQuery = User::query()->orderBy($sort, $direction);
 
+		if ($request->input('role'))
+		{
+			$usersQuery->select(['users.*','orgs.name']);
+			$usersQuery->join('role_user', 'users.id', '=', 'role_user.user_id')->where('role_user.role_id', '=', $request->input('role'));
+			$usersQuery->leftJoin('orgs', 'orgs.id', '=', 'role_user.org_id');
+		}
+
 		if ($request->input('q'))
 		{
 			$s = '%' . $request->input('q') .'%';
@@ -44,13 +52,6 @@ class UsersApiController extends ApiController
 				$usersQuery->orWhere('gnz_id','like',$s);
 			});
 		}
-
-
-		// if ($request->input('org'))
-		// {
-		// 	$usersQuery->where('rego','like',$s);
-		// }
-		//$usersQuery->where('activated',false);
 
 		if ($users = $usersQuery->paginate($request->input('per-page', 100)))
 		{
