@@ -60,12 +60,11 @@
 	<div v-if="showAddExisting || showAddNew">
 
 	
-
 		<div class="form-group col-md-6">
 			<label for="member_type">Type of Club Member To Add As</label>
 
-			<div class="alert alert-danger" role="alert">
-				Club Member Types haven't been set up for {{org.name}}. A club administrator can add them at <a href="/admin/member-types" class="alert-link">/admin/member-types</a>
+			<div class="alert alert-danger" role="alert" v-if="memberTypes.length==0">
+				<span class="fa fa-exclamation-triangle danger"></span> Club Member Types haven't been set up for {{org.name}}. A club administrator can add them at <a href="/admin/member-types" class="alert-link">/admin/member-types</a>
 			</div>
 
 			<select v-model="membertype_id" name="member_type" id="member_type" v-if="memberTypes.length>0" class="form-control">
@@ -76,11 +75,11 @@
 
 		
 
-		<div class="form-group col-md-6">
+		<div class="form-group col-md-6" v-if="showAddNew">
 			<label for="member_type">GNZ Member Type</label>
 
 			<select v-model="gnz_membertype_id" name="member_type" id="member_type" v-if="gnzMemberTypes.length>0" class="form-control">
-				<option :value="null" disabled selected>Select type of member...</option>
+				<option :value="null"  selected>Don't make a member of GNZ</option>
 				<option v-for="memberType in gnzMemberTypes" :value="memberType.id">{{memberType.name}}</option>
 			</select>
 			<span v-if="gnzMemberTypes.length==0">Loading...</span>
@@ -196,7 +195,6 @@
 					org_id: this.org.id, 
 					member_id: this.existingMemberId, 
 					membertype_id:this.membertype_id,
-					gnz_membertype_id: this.gnz_membertype_id,
 					join_date: thedate
 				}).then(function (response) {
 					messages.$emit('success', 'Member added');

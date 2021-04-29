@@ -128,59 +128,6 @@
 		</div>
 		<div class="col-sm-6 col-xs-12">
 
-			<table class="table table-striped">
-				<tr>
-					<th colspan="2">Membership</th>
-				</tr>
-				<tr v-if="1">
-					
-					<button class="ml-2 btn btn-outline-dark" v-on:click="showResignPanel=!showResignPanel">Resign Member...</button>
-
-					<div v-if="showResignPanel" class="card mt-3">
-						<div class="card-header">
-							Resign Member From:
-						</div>
-
-						<div class="card-body">
-							<div>
-								<label for="resign_gnz">
-									<input id="resign_gnz" type="checkbox" v-model="resign_gnz"> Gliding New Zealand
-								</label>
-							</div>
-							<div v-for="affiliate in orderedAffiliates"  v-if="!affiliate.resigned" class="ml-4">
-								<label :for="'affiliate_' + affiliate.id">
-									<input v-model="affiliate.to_resign" :id="'affiliate_' + affiliate.id" type="checkbox"> 
-									{{affiliate.org.name}} <span v-if="getMemberType(affiliate.membertype_id)">({{getMemberType(affiliate.membertype_id).name}})</span>
-								</label>
-							</div>
-
-							<div class="mb-3">
-								<div>Reason: </div>
-								<input type="text" v-model="resign_reason" class="form-control col-8 inline">
-							</div>
-
-							<div class="mb-3">
-								<div>Date: </div>
-								<div>
-									<v-date-picker  v-if="member.can_edit" id="start_date" v-model="resign_date" :locale="{ id: 'start_date', firstDayOfWeek: 2, masks: { weekdays: 'WW', L: 'DD/MM/YYYY' } }" :popover="{ visibility: 'click' }"></v-date-picker>
-								</div>
-								
-							</div>
-
-							<button class="btn btn-outline-dark float-right" v-on:click="showResignPanel=false">Cancel</button>
-							<button class="btn btn-primary" v-on:click="resignMember" :disabled="loadingResign">Resign Member</button>
-
-							<span v-show="loadingResign"><i  class="fas fa-cog fa-spin"></i> Please Wait</span>
-
-							
-						</div>
-
-					</div>
-
-				</tr>
-			</table>
-
-
 
 			<table class="table table-striped">
 				<tr>
@@ -233,15 +180,11 @@
 					<td class="table-label col-xs-6">GNZ Membership Type</td>
 					<td>
 
-						<select v-model="member.membership_type" class="form-control">
-							<option value="Resigned">Resigned</option>
-							<option value="Flying">Flying</option>
-							<option value="Mag Only">Communications</option>
-							<option value="VFP Bulk">Visiting Foreign Pilot Bulk</option>
-							<option value="VFP 3 Mth">Visiting Foreign Pilot 3 Mth</option>
-							<option value="Junior">Junior</option>
-							<option value="">None</option>
+						<select v-model="member.gnz_membertype_id" name="member_type" id="member_type" v-if="gnzMemberTypes.length>0" class="form-control">
+							<option :value="null">Not a GNZ Member</option>
+							<option v-for="memberType in gnzMemberTypes" :value="memberType.id">{{memberType.name}}</option>
 						</select>
+						<span v-if="gnzMemberTypes.length==0">Loading...</span>
 
 					</td>
 				</tr>
@@ -288,21 +231,90 @@
 
 			<table class="table table-striped table-sm">
 				<tr>
-					<th colspan="2">Membership Status &amp; History <a :href="'/members/' + member.id + '/edit-affiliates'" class="btn btn-outline-dark btn-sm float-right">Edit History</a></th>
+					<th colspan="2">
+						Membership Status &amp; History 
+						<a :href="'/members/' + member.id + '/edit-affiliates'" class="btn btn-link btn-sm float-right">Edit History</a> 
+						<button class="ml-2 btn btn-outline-dark btn-sm float-right mr-2" v-on:click="showResignPanel=!showResignPanel">Resign Member...</button>
+					</th>
 				</tr>
+
+				<tr v-if="showResignPanel"><td colspan="2">
+					<div class="card mt-3">
+						<div class="card-header">
+							Resign Member From:
+						</div>
+
+						<div class="card-body">
+							<div>
+								<label for="resign_gnz">
+									<input id="resign_gnz" type="checkbox" v-model="resign_gnz"> Gliding New Zealand
+								</label>
+							</div>
+							<div v-for="affiliate in orderedAffiliates"  v-if="!affiliate.resigned" class="ml-4">
+								<label :for="'affiliate_' + affiliate.id">
+									<input v-model="affiliate.to_resign" :id="'affiliate_' + affiliate.id" type="checkbox"> 
+									{{affiliate.org.name}} <span v-if="getMemberType(affiliate.membertype_id)">({{getMemberType(affiliate.membertype_id).name}})</span>
+								</label>
+							</div>
+
+							<div class="mb-3">
+								<div>Reason: </div>
+								<input type="text" v-model="resign_reason" class="form-control col-8 inline">
+							</div>
+
+							<div class="mb-3">
+								<div>Date: </div>
+								<div>
+									<v-date-picker  v-if="member.can_edit" id="start_date" v-model="resign_date" :locale="{ id: 'start_date', firstDayOfWeek: 2, masks: { weekdays: 'WW', L: 'DD/MM/YYYY' } }" :popover="{ visibility: 'click' }"></v-date-picker>
+								</div>
+								
+							</div>
+
+							<button class="btn btn-outline-dark float-right" v-on:click="showResignPanel=false">Cancel</button>
+							<button class="btn btn-primary" v-on:click="resignMember" :disabled="loadingResign">Resign Member</button>
+
+							<span v-show="loadingResign"><i  class="fas fa-cog fa-spin"></i> Please Wait</span>
+
+							
+						</div>
+
+					</div>
+				</td></tr>
 
 				<template v-for="affiliate in orderedAffiliates">
 					
 					<tr>
 						<td>{{affiliate.org.name}}</td>
 						<td>
+
+
+							<div v-if="!affiliate.showChange">
+								<button v-if="!affiliate.resigned" class="btn btn-outline-dark btn-xs float-right" v-on:click="affiliate.showChange=!affiliate.showChange">Change Membership Type</button>
+
 								<span v-if="getMemberType(affiliate.membertype_id)">{{getMemberType(affiliate.membertype_id).name}}</span>
 								
 								<span v-if="!affiliate.resigned" class="success">Active</span>
 								<span v-if="affiliate.resigned" class="error">Ended/Resigned</span>
 
 								<br>
-								{{formatDate(affiliate.join_date)}} <span v-if="affiliate.end_date">to {{formatDate(affiliate.end_date)}}</span>
+								From {{formatDate(affiliate.join_date)}} <span v-if="affiliate.end_date">to {{formatDate(affiliate.end_date)}}</span>
+							</div>
+
+							<div v-if="affiliate.showChange">
+								<div v-if="filteredMembershipTypes(affiliate.org.id).length==0">
+									<span class="fa fa-exclamation-triangle danger"></span> Club Member Types haven't been set up for {{org.name}}. A club administrator can add them at <a href="/admin/member-types" class="alert-link">/admin/member-types</a>
+								</div>
+								<div v-if="filteredMembershipTypes(affiliate.org.id).length>0">
+									Change from {{getMemberType(affiliate.membertype_id).name}} to:
+									<select v-model="affiliate.cloneMemberType" name="member_type" id="member_type" v-if="memberTypes.length>0" class="form-control mb-2">
+										<option v-for="memberType in filteredMembershipTypes(affiliate.org.id)" :value="memberType.id">{{memberType.name}}</option>
+									</select>
+									<button class="btn btn-primary btn-sm" v-on:click="changeType(affiliate)">Change Type</button>
+									<button class="btn btn-outline-dark btn-sm" v-on:click="affiliate.showChange=false">Cancel</button>
+								</div>
+							</div>
+
+
 						</td>
 					</tr>
 				</template>
@@ -330,6 +342,7 @@
 			return {
 				org: null,
 				memberTypes: [],
+				gnzMemberTypes: [],
 				member: [],
 				orgs: [],
 				showEdit: false,
@@ -360,6 +373,7 @@
 		},
 		methods: {
 			getMemberType(membertypeId) {
+				if (membertypeId==null) return {'id': null, 'name': 'None'};
 				return this.memberTypes.find( ({ id }) => id === membertypeId);
 			},
 			loadMember: function() {
@@ -369,7 +383,8 @@
 					that.member.date_of_birth = that.$moment(that.member.date_of_birth).toDate();
 					// convert dates to javascript for all affiliates
 					if (that.member.affiliates) {
-							that.member.affiliates.forEach(function(affiliate) {
+						that.member.affiliates.forEach(function(affiliate) {
+							Vue.set(affiliate, 'showChange', false);
 							if (affiliate.join_date) affiliate.join_date = that.$moment(affiliate.join_date).toDate();
 							if (affiliate.end_date) affiliate.end_date = that.$moment(affiliate.end_date).toDate();
 							affiliate.to_resign = true;
@@ -392,6 +407,9 @@
 				var that=this;
 				window.axios.get('/api/v1/membertypes').then(function (response) {
 					that.memberTypes = response.data.data;
+				});
+				window.axios.get('/api/v1/membertypes?org_id=' + 30).then(function (response) {
+					that.gnzMemberTypes = response.data.data;
 				});
 			},
 			saveMember: function() {
@@ -430,11 +448,13 @@
 					}
 					window.axios.post('/api/v1/members/' + this.memberId + '/resign-gnz', data).then(function (response) {
 						messages.$emit('success', 'Member Resigned from GNZ');
+						that.showResignPanel = false;
 						that.loadingResign = false;
 						that.loadMember();
 					}).catch(error => {
 						if (error.response) {
 							that.loadMember();
+							that.showResignPanel = false;
 							that.loadingResign = false;
 							messages.$emit('error', error.response.data.error);
 						}
@@ -504,6 +524,42 @@
 						messages.$emit('success', 'Request Sent');
 					});
 				}
+			},
+			// filter membership types by the given org ID
+			filteredMembershipTypes: function(org_id) {
+				if (this.memberTypes.length==0) return [];
+				return this.memberTypes.filter( function (m) {
+					if (m.org_id == org_id) return true;
+				});
+			},
+			changeType: function(affiliate)
+			{
+				var that = this;
+				// create a new affilliate with the new details
+
+				var today = that.$moment().format("YYYY-MM-DD"); // starts today
+				window.axios.post('/api/v1/affiliates', {
+					org_id: affiliate.org.id, 
+					member_id: this.member.id, 
+					membertype_id: affiliate.cloneMemberType,
+					join_date: today
+				}).then(function (response) {
+
+					// set the current affiliate to ended
+					affiliate.end_date = today;
+					affiliate.resigned = true;
+					affiliate.resigned_comment = 'Changed Membership Type';
+					that.updateAffiliate(affiliate, true);
+
+
+				}).catch(
+					function (error) {
+						var errors = Object.entries(error.response.data.errors);
+						for (const [name, error] of errors) {
+							messages.$emit('error', `${error}`);
+						}
+					}
+				);
 			}
 		}
 	}

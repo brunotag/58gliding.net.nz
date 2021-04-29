@@ -9,12 +9,14 @@ use App\Classes\Settings;
 use App\Http\Requests;
 use App\Http\Controllers\Api\ApiController;
 use App\Models\Member;
+use App\Models\Membertype;
 use App\Models\MemberChangeLog;
 use App\Models\Org;
 use App\Models\Affiliate;
 use App\Exports\MembersExport;
 use App\Mail\RequestGnzApproval;
 use App\Mail\ResignGnzMember;
+use App\Mail\NotifyGnzMemberTypeChange;
 use Carbon\Carbon;
 use Carbon\CarbonTimeZone;
 use DB;
@@ -56,6 +58,7 @@ class MembersApiController extends ApiController
 		$member->email = '';
 		$member->club = $org->gnz_code;
 		$member->needs_gnz_approval = true;
+		$member->gnz_membertype_id = $request->input('gnz_membertype_id', null);
 		$member->created = Carbon::now(new CarbonTimeZone('Pacific/Auckland'));
 
 		if ( $request->input('submit_to_gnz') ) {
@@ -157,8 +160,14 @@ class MembersApiController extends ApiController
 		// find them member and set their pending approval status, and send an email notification
 		if ($member = Member::with('affiliates.org')->find($id))
 		{
-			$old_member_type = $member->membership_type;
-			$member->membership_type = 'Resigned';
+			$resigned_type = null;
+			if ($gnz_org = Org::where('short_name', '=', 'GNZ')->first())
+			{
+				$resigned_type = Membertype::where('org_id', '=', $gnz_org->id)->where('slug', '=', 'resigned')->first();
+			}
+
+			$old_member_type = $member->gnz_membertype_id;
+			if (isset($resigned_type->id)) $member->gnz_membertype_id = $resigned_type->id;
 			$member->pending_approval = false;
 
 			// get the resign date
@@ -347,7 +356,7 @@ class MembersApiController extends ApiController
 			$form['auto_tow'] = $request->get('auto_tow');
 
 			// gnz things that club admins can also change
-			$form['membership_type'] = $request->get('membership_type');
+			$form['gnz_membertype_id'] = $request->get('gnz_membertype_id');
 			$form['date_joined'] = $request->get('date_joined');
 			$form['club'] = $request->get('club');
 
@@ -368,6 +377,26 @@ class MembersApiController extends ApiController
 
 		// log any changes
 		$this->_check_for_changes($form, $member);
+
+		// check if we are changing the GNZ membership type, and if so, notify who needs to know
+		if ($member->gnz_membertype_id != $request->get('gnz_membertype_id'))
+		{
+			$settings = new Settings();
+			if ($gnz_org = Org::where('short_name', '=', 'GNZ')->first())
+			{
+				if ($gnz_email = $settings->get('email_new_member_to', $gnz_org))
+				{
+					echo 'hi ';
+					Mail::to($gnz_email)->send(new NotifyGnzMemberTypeChange($member, $member->gnz_membertype_id, $request->get('gnz_membertype_id')));
+				}
+			}
+
+			
+		}
+		print_r($member->gnz_membertype_id);
+		print_r($request->get('gnz_membertype_id'));
+		exit();
+
 
 		$member->fill($form);
 		if ($member->save())

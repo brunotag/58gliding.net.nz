@@ -2,7 +2,11 @@
 <div>
 	<h1 v-if="member" class="results-title"><a href="/members">Members</a> &raquo; <a :href="'/members/' + member.id">{{member.first_name}} {{member.last_name}}</a> &raquo; <a :href="'/members/' + member.id + '/edit'">Edit</a> &raquo; Membership History</h1>
 
-	Add New 
+
+	<div class="alert alert-danger" role="alert">
+		<strong><span class="fa fa-exclamation-triangle danger"></span> Warning</strong> Only edit the membership history if a mistake was made or correction needed. If a member is changing type of membership, e.g. Associate to Flying member, change it on the <a :href="'/members/' + member.id + '/edit'" class="alert-link">Edit Member page.</a> Otherwise features like billing and statistics won't be correct.
+	</div>
+
 
 	<table class="table table-striped table-sm collapsable" v-if="member && memberTypes">
 		<tr>
@@ -20,18 +24,6 @@
 			<td>
 				{{getMemberType(affiliate.membertype_id).name}}<br>
 					<a href="#" v-on:click.prevent="affiliate.showEdit=!affiliate.showEdit">Edit</a> &nbsp; 
-					<a v-show="!affiliate.resigned" href="#" v-on:click.prevent="affiliate.showChange=!affiliate.showChange">Change</a>
-
-
-				<span v-if="affiliate.showChange">
-					<br>
-					Change to:
-					<select v-model="affiliate.cloneMemberType" name="member_type" id="member_type" v-if="memberTypes.length>0" class="form-control">
-						<option v-for="memberType in filteredMembershipTypes(affiliate.org.id)" :value="memberType.id">{{memberType.name}}</option>
-					</select>
-					<button class="btn btn-primary btn-xs" v-on:click="changeType(affiliate)">Change Type</button>
-				</span>
-
 
 				<span v-if="affiliate.showEdit">
 					<br>
@@ -143,35 +135,6 @@
 						});
 					}
 				});
-			},
-			changeType: function(affiliate)
-			{
-				var that = this;
-				// create a new affilliate with the new details
-
-				var today = that.$moment().format("YYYY-MM-DD"); // starts today
-				window.axios.post('/api/v1/affiliates', {
-					org_id: affiliate.org.id, 
-					member_id: this.member.id, 
-					membertype_id: affiliate.cloneMemberType,
-					join_date: today
-				}).then(function (response) {
-
-					// set the current affiliate to ended
-					affiliate.end_date = today;
-					affiliate.resigned = true;
-					affiliate.resigned_comment = 'Changed Membership Type';
-					that.updateAffiliate(affiliate, true);
-
-
-				}).catch(
-					function (error) {
-						var errors = Object.entries(error.response.data.errors);
-						for (const [name, error] of errors) {
-							messages.$emit('error', `${error}`);
-						}
-					}
-				);
 			},
 			loadMemberTypes: function()
 			{
