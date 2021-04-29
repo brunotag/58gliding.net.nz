@@ -5,6 +5,7 @@ use App\Models\Member;
 use App\Models\Org;
 use App\Models\Affiliate;
 use App\Models\Rating;
+use App\Models\Membertype;
 use DateTime;
 use DB;
 use Gate;
@@ -44,6 +45,12 @@ class MemberUtilities {
 			$org = Org::where('id', $request->input('org_id'))->first();
 		}
 
+		$resigned_type = null;
+		if ($gnz_org = Org::where('short_name', '=', 'GNZ')->first())
+		{
+			$resigned_type = Membertype::where('org_id', '=', $gnz_org->id)->where('slug', '=', 'resigned')->first();
+
+		}
 
 		$query->orderBy('last_name');
 		$select_string = "
@@ -83,8 +90,8 @@ class MemberUtilities {
 		if ($org==null) {
 			if ($request->input('ex_members', 'false')!='true')
 			{
-				$query->where(function($query) {
-					$query->where('membership_type', '<>', 'Resigned');
+				$query->where(function($query) use ($resigned_type) {
+					$query->where('gnz_membertype_id', '<>', $resigned_type->id);
 				});
 			}
 		}
@@ -194,9 +201,12 @@ class MemberUtilities {
 		switch ($request->input('type'))
 		{
 			case 'glider-pilot':
-				$query->where(function($query) {
-					$query->where('membership_type','=','Flying');
-				});
+				if ($flying_type = Membertype::where('org_id', '=', $gnz_org->id)->where('slug', '=', 'flying')->first())
+				{
+					$query->where(function($query) use ($flying_type) {
+						$query->where('membership_type_id','=',$flying_type->id);
+					});
+				}
 				break;
 			case 'instructors':
 				$query->havingRaw('rating_instructor=true');
@@ -235,6 +245,8 @@ class MemberUtilities {
 				$query->where('observer_number','!=','0');
 				break;
 			case 'youth':
+				if ($comms_only_type = Membertype::where('org_id', '=', $gnz_org->id)->where('slug', '=', 'communication-only')->first())
+
 				// check which month we are in to decide which year we need
 				if (date("n")<=10)
 				{
@@ -249,7 +261,7 @@ class MemberUtilities {
 				$thirty_first_of_oct =  $theyear . '-10-31';
 				$query->whereRaw('DATE_FORMAT(FROM_DAYS(DATEDIFF("'.$thirty_first_of_oct.'", date_of_birth)),"%Y")+0 BETWEEN 1 AND 26');
 
-				$query->where('membership_type','!=','Mag Only');
+				$query->where('gnz_membertype_id','!=',$comms_only_type->id);
 				break;
 		}
 
