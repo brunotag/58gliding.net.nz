@@ -5,5 +5,5 @@ See all members waiting for approval at:<br>
 
 <br>
 
-Go direct to edit the user:<br>
+Edit the user:<br>
 <a href="{{env('APP_URL')}}/members/{{$member->id}}/edit">{{env('APP_URL')}}//members/{{$member->id}}/edit</a>

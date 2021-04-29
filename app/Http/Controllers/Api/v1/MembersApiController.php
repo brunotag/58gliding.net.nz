@@ -184,13 +184,14 @@ class MembersApiController extends ApiController
 				$this->log_member_change($member, 'Resign Member', 'membership_type', $old_member_type, $member->membership_type);
 				$this->log_member_change($member, 'Resign Member', 'resigned', $old_resign_date, $member->resigned);
 
-				//  send Email notification
 				$settings = new Settings();
-				if ($gnz_email = $settings->get('email_new_member_to'))
+				if ($gnz_org = Org::where('short_name', '=', 'GNZ')->first())
 				{
-					Mail::to($gnz_email)->send(new ResignGnzMember($member));
+					if ($gnz_email = $settings->get('email_new_member_to', $gnz_org))
+					{
+						Mail::to($gnz_email)->send(new ResignGnzMember($member));
+					}
 				}
-				
 
 				return $this->success($member);
 			}
@@ -255,12 +256,14 @@ class MembersApiController extends ApiController
 			// ($member, $action, $field, $oldval, $newval)
 			$this->log_member_change($member, 'Requested Approval', 'pending_approval', $old_pending_approval, $member->pending_approval);
 			
-			// TODO send Email notification here
 			// get the GNZ admin email address
 			$settings = new Settings();
-			if ($gnz_email = $settings->get('email_new_member_to'))
+			if ($gnz_org = Org::where('short_name', '=', 'GNZ')->first())
 			{
-				Mail::to($gnz_email)->send(new RequestGnzApproval($member));
+				if ($gnz_email = $settings->get('email_new_member_to', $gnz_org))
+				{
+					Mail::to($gnz_email)->send(new RequestGnzApproval($member));
+				}
 			}
 
 			return $this->success($member);
@@ -386,17 +389,10 @@ class MembersApiController extends ApiController
 			{
 				if ($gnz_email = $settings->get('email_new_member_to', $gnz_org))
 				{
-					echo 'hi ';
 					Mail::to($gnz_email)->send(new NotifyGnzMemberTypeChange($member, $member->gnz_membertype_id, $request->get('gnz_membertype_id')));
 				}
 			}
-
-			
 		}
-		print_r($member->gnz_membertype_id);
-		print_r($request->get('gnz_membertype_id'));
-		exit();
-
 
 		$member->fill($form);
 		if ($member->save())

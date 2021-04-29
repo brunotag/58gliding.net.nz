@@ -165,7 +165,7 @@
 						
 					</td>
 				</tr>
-				<tr v-if="!member.pending_approval && (member.membership_type=='Resigned' || member.membership_type==null || member.membership_type=='' || !member.nzga_number) && !showAdmin">
+				<tr v-if="!member.pending_approval && !member.nzga_number && !showAdmin">
 
 					<td class="table-label col-xs-6">
 						<span class="fa fa-exclamation-triangle warning"></span>
@@ -302,15 +302,24 @@
 
 							<div v-if="affiliate.showChange">
 								<div v-if="filteredMembershipTypes(affiliate.org.id).length==0">
-									<span class="fa fa-exclamation-triangle danger"></span> Club Member Types haven't been set up for {{org.name}}. A club administrator can add them at <a href="/admin/member-types" class="alert-link">/admin/member-types</a>
+									<span class="fa fa-exclamation-triangle danger"></span> Club Member Types haven't been set up for {{affiliate.org.name}}. A club administrator can add them at <a href="/admin/member-types" class="alert-link">/admin/member-types</a>
+									<button class="btn btn-outline-dark btn-sm" v-on:click="affiliate.showChange=false">Cancel</button>
+
 								</div>
 								<div v-if="filteredMembershipTypes(affiliate.org.id).length>0">
 									Change from {{getMemberType(affiliate.membertype_id).name}} to:
 									<select v-model="affiliate.cloneMemberType" name="member_type" id="member_type" v-if="memberTypes.length>0" class="form-control mb-2">
 										<option v-for="memberType in filteredMembershipTypes(affiliate.org.id)" :value="memberType.id">{{memberType.name}}</option>
 									</select>
-									<button class="btn btn-primary btn-sm" v-on:click="changeType(affiliate)">Change Type</button>
-									<button class="btn btn-outline-dark btn-sm" v-on:click="affiliate.showChange=false">Cancel</button>
+
+									<label for="member_type">Date of change</label> 
+									<v-date-picker id="change_date" v-model="affiliate.changeDate" :locale="{ id: 'change_date', firstDayOfWeek: 2, masks: { weekdays: 'WW', L: 'DD/MM/YYYY' } }" :popover="{ visibility: 'click' }"></v-date-picker>
+									{{affiliate.change_date}}
+									
+									<div class="mt-2">
+										<button class="btn btn-primary btn-sm" v-on:click="changeType(affiliate)">Change Type</button>
+										<button class="btn btn-outline-dark btn-sm" v-on:click="affiliate.showChange=false">Cancel</button>
+									</div>
 								</div>
 							</div>
 
@@ -385,6 +394,8 @@
 					if (that.member.affiliates) {
 						that.member.affiliates.forEach(function(affiliate) {
 							Vue.set(affiliate, 'showChange', false);
+							Vue.set(affiliate, 'changeDate', that.$moment().toDate());
+
 							if (affiliate.join_date) affiliate.join_date = that.$moment(affiliate.join_date).toDate();
 							if (affiliate.end_date) affiliate.end_date = that.$moment(affiliate.end_date).toDate();
 							affiliate.to_resign = true;
@@ -537,20 +548,18 @@
 				var that = this;
 				// create a new affilliate with the new details
 
-				var today = that.$moment().format("YYYY-MM-DD"); // starts today
 				window.axios.post('/api/v1/affiliates', {
 					org_id: affiliate.org.id, 
 					member_id: this.member.id, 
 					membertype_id: affiliate.cloneMemberType,
-					join_date: today
+					join_date: this.apiDateFormat(affiliate.changeDate)
 				}).then(function (response) {
 
 					// set the current affiliate to ended
-					affiliate.end_date = today;
+					affiliate.end_date = affiliate.changeDate;
 					affiliate.resigned = true;
 					affiliate.resigned_comment = 'Changed Membership Type';
 					that.updateAffiliate(affiliate, true);
-
 
 				}).catch(
 					function (error) {
