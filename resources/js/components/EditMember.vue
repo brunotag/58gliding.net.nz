@@ -287,7 +287,6 @@
 						<td>{{affiliate.org.name}}</td>
 						<td>
 
-
 							<div v-if="!affiliate.showChange">
 								<button v-if="!affiliate.resigned" class="btn btn-outline-dark btn-xs float-right" v-on:click="affiliate.showChange=!affiliate.showChange">Change Membership Type</button>
 
@@ -316,11 +315,21 @@
 									<v-date-picker id="change_date" v-model="affiliate.changeDate" :locale="{ id: 'change_date', firstDayOfWeek: 2, masks: { weekdays: 'WW', L: 'DD/MM/YYYY' } }" :popover="{ visibility: 'click' }"></v-date-picker>
 									{{affiliate.change_date}}
 									
+									<div>
+										Does the GNZ membership type need to change too?
+										<select v-model="member.gnz_membertype_id" name="member_type" id="member_type" v-if="gnzMemberTypes.length>0" class="form-control">
+											<option :value="null">Not a GNZ Member</option>
+											<option v-for="memberType in gnzMemberTypes" :value="memberType.id">{{memberType.name}}</option>
+										</select>
+									</div>
+
 									<div class="mt-2">
 										<button class="btn btn-primary btn-sm" v-on:click="changeType(affiliate)">Change Type</button>
 										<button class="btn btn-outline-dark btn-sm" v-on:click="affiliate.showChange=false">Cancel</button>
 									</div>
 								</div>
+
+
 							</div>
 
 
@@ -487,7 +496,7 @@
 				affiliate_clone.join_date = this.apiDateFormat(affiliate_clone.join_date);
 				affiliate_clone.end_date = this.apiDateFormat(affiliate_clone.end_date);
 				window.axios.put('/api/v1/affiliates/' + affiliate.id, affiliate_clone).then(function (response) {
-					messages.$emit('success', 'Membership Details Updated');
+					messages.$emit('success', 'Club Membership Details Updated');
 					that.loadMember();
 				}).catch(error => {
 					if (error.response) {
@@ -547,6 +556,8 @@
 			{
 				var that = this;
 				// create a new affilliate with the new details
+
+				that.saveMember();
 
 				window.axios.post('/api/v1/affiliates', {
 					org_id: affiliate.org.id, 
