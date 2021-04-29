@@ -6,7 +6,7 @@
 
 	<div class="btn-group" role="group">
 		<button type="button" class="btn btn-outline-dark btn-sm" v-on:click="previous()">&lt;</button>
-		<button type="button" class="btn btn-outline-dark btn-sm disabled">Page {{ page }} of {{ last_page }}</button>
+		<button type="button" class="btn btn-outline-dark btn-sm disabled">Page {{ state.page }} of {{ last_page }}</button>
 		<button type="button" class="btn btn-outline-dark btn-sm" v-on:click="next()">Next &gt;</button>
 	</div>
 
@@ -48,14 +48,16 @@
 
 	<div class="btn-group" role="group">
 		<button type="button" class="btn btn-outline-dark btn-sm" v-on:click="previous()">&lt;</button>
-		<button type="button" class="btn btn-outline-dark btn-sm disabled">Page {{ page }} of {{ last_page }}</button>
+		<button type="button" class="btn btn-outline-dark btn-sm disabled">Page {{ state.page }} of {{ last_page }}</button>
 		<button type="button" class="btn btn-outline-dark btn-sm" v-on:click="next()">Next &gt;</button>
 	</div>
 </div>
 </template>
 
 <script>
+import common from '../../mixins.js';
 export default {
+	mixins: [common],
 	data: function() {
 		return {
 			results: [],
@@ -64,12 +66,18 @@ export default {
 			selectedOrg: "all",
 			sort: 'email',
 			direction: 'asc',
-			page: 1,
+			state: {page: 1},
 			last_page: 0,
 			total: 0,
 			q: '',
 			showEdit: false,
 			selectedRole: null
+		}
+	},
+	watch: {
+		'state': {
+			handler: 'load',
+			deep: true
 		}
 	},
 	created: function() {
@@ -81,7 +89,10 @@ export default {
 		selectRole: function(role)
 		{
 			if (this.selectedRole==role.id) this.selectedRole=null;
-			else this.selectedRole=role.id;
+			else {
+				this.selectedRole=role.id;
+				this.state.page = 1;
+			}
 
 			this.load();
 
@@ -94,7 +105,7 @@ export default {
 			}
 			// set the new item to sort by
 			this.sort = sortBy;
-			this.page=1;
+			this.state.page=1;
 			this.load();
 		},
 		loadRoles: function() {
@@ -110,27 +121,20 @@ export default {
 			// 	this.orgs = response.data.data;
 			// });
 			var that = this;
-			var data = {sort: this.sort, direction: this.direction, page: this.page, q: this.q, role: this.selectedRole};
+			var data = {sort: this.sort, direction: this.direction, page: this.state.page, q: this.q, role: this.selectedRole};
 			window.axios.get('/api/v1/users', {params: data}).then(function (response) {
 				var responseJson = response.data;
 
 				that.results = responseJson.data;
-				that.last_page = responseJson.data.last_page;
-				that.total = responseJson.data.total;
+				that.last_page = responseJson.last_page;
+				that.total = responseJson.total;
 				if (that.page > that.last_page && that.last_page>0) {
 					that.page = 1;
 				}
 			});
 		},
-		next: function() {
-			if (this.page<this.last_page) this.page = +this.page + 1;
-			this.load();
-		},
-		previous: function() {
-			if (this.page>1) this.page = +this.page - 1;
-			this.load();
-		},
 		search: function() {
+			this.state.page=1;
 			this.load();
 		}
 	}
