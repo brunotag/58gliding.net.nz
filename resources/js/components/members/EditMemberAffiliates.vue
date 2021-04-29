@@ -22,17 +22,9 @@
 		<tr v-for="(affiliate, index) in orderedAffiliates" v-bind:key="affiliate.id">
 			<td>{{affiliate.org.name}}</td>
 			<td>
-				{{getMemberType(affiliate.membertype_id).name}}<br>
-					<a href="#" v-on:click.prevent="affiliate.showEdit=!affiliate.showEdit">Edit</a> &nbsp; 
-
-				<span v-if="affiliate.showEdit">
-					<br>
-					<span class="warning">Only edit if actually wrong!</span>
-					<br>Click Change to change type of member.
-					<select v-model="affiliate.membertype_id" name="member_type" id="member_type" v-if="memberTypes.length>0" class="form-control">
-						<option v-for="memberType in filteredMembershipTypes(affiliate.org.id)" :value="memberType.id">{{memberType.name}}</option>
-					</select>
-				</span>
+				<select v-model="affiliate.membertype_id" name="member_type" id="member_type" v-if="memberTypes.length>0" class="form-control">
+					<option v-for="memberType in filteredMembershipTypes(affiliate.org.id)" :value="memberType.id">{{memberType.name}}</option>
+				</select>
 			</td>
 			<td>
 					<span v-if="!affiliate.resigned" class="success">Active</span>
@@ -58,7 +50,7 @@
 			<td>
 				<input type="text" v-model="affiliate.resigned_comment" class="form-control">
 			</td>
-			<td>
+			<td class="text-nowrap">
 				<button class="btn btn-primary btn-sm mb-1 mr-2" v-on:click="updateAffiliate(affiliate, false)">Save</button>
 				<button class="btn btn-primary btn-sm" v-on:click="affiliate.showDelete=!affiliate.showDelete">Delete</button>
 				<div v-if="affiliate.showDelete">
