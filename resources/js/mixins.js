@@ -56,6 +56,9 @@ module.exports = {
 		formatTime: function(time) {
 			return Vue.prototype.$moment(time, Vue.prototype.$moment.HTML5_FMT.TIME_SECONDS).format('h:mma');
 		},
+		formatDateTime: function(datetime) {
+			return Vue.prototype.$moment(datetime).format('ddd Do MMM YYYY h:mma');
+		},
 		formatBoolean: function(value) {
 			if (value) {
 				return '<i class="fa fa-check success"></i>';

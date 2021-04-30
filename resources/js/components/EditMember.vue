@@ -211,13 +211,13 @@
 						</select>
 					</td>
 				</tr>
-				<tr v-if="showAdmin">
-					<td class="table-label col-xs-6">Created</td>
-					<td>{{member.created}}</td>
+				<tr>
+					<td class="table-label">Created</td>
+					<td>{{formatDateTime(member.created)}}</td>
 				</tr>
-				<tr v-if="showAdmin">
-					<td class="table-label col-xs-6">Modified</td>
-					<td>{{member.modified}}</td>
+				<tr>
+					<td class="table-label">Modified</td>
+					<td>{{formatDateTime(member.modified)}}</td>
 				</tr>
 				<tr v-if="showAdmin">
 					<td class="table-label col-xs-6">Comments</td>

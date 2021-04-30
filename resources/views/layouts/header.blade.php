@@ -140,6 +140,8 @@
 				<?php if (isset($org) && $org->slug!='gnz') { ?>
 					<a class="ml-4" href="http://{{$org->website}}">{{$org->short_name}} Website</a>
 				<?php } ?>
+
+				<span class="ml-4">v1.1</span>
 			</div>
 
 		</div>
