@@ -94,7 +94,7 @@
 				</tr>
 				<tr>
 					<td></td>
-					<td><button class="btn btn-primary btn-sm" v-on:click="saveMember()">Save Changes</button></td>
+					<td><button class="btn btn-primary btn-sm" v-on:click="saveMember()" :disabled="savingMember">Save Changes</button> <span v-show="savingMember"><i  class="fas fa-cog fa-spin"></i> Please Wait</span></td>
 				</tr>
 			</table>
 
@@ -121,7 +121,7 @@
 				</tr>
 				<tr>
 					<td></td>
-					<td><button class="btn btn-primary btn-sm" v-on:click="saveMember()">Save Changes</button></td>
+					<td><button class="btn btn-primary btn-sm" v-on:click="saveMember()" :disabled="savingMember">Save Changes</button> <span v-show="savingMember"><i  class="fas fa-cog fa-spin"></i> Please Wait</span></td>
 				</tr>
 			</table>
 
@@ -225,7 +225,7 @@
 				</tr>
 				<tr>
 					<td></td>
-					<td><button class="btn btn-primary btn-sm" v-on:click="saveMember()">Save Changes</button></td>
+					<td><button class="btn btn-primary btn-sm" v-on:click="saveMember()" :disabled="savingMember">Save Changes</button> <span v-show="savingMember"><i  class="fas fa-cog fa-spin"></i> Please Wait</span></td>
 				</tr>
 			</table>
 
@@ -271,7 +271,7 @@
 							</div>
 
 							<button class="btn btn-outline-dark float-right" v-on:click="showResignPanel=false">Cancel</button>
-							<button class="btn btn-primary" v-on:click="resignMember" :disabled="loadingResign">Resign Member</button>
+							<button class="btn btn-primary" v-on:click="resignMember" :disabled="loadingReSign">Resign Member</button>
 
 							<span v-show="loadingResign"><i  class="fas fa-cog fa-spin"></i> Please Wait</span>
 
@@ -372,7 +372,8 @@
 				waitingResign: false,
 				duplicates: [], // any member duplicates, used when approving a member,
 				loadingApproval: false,
-				loadingResign: false
+				loadingResign: false,
+				savingMember: false
 			}
 		},
 		mounted() {
@@ -434,11 +435,13 @@
 			},
 			saveMember: function() {
 				var that=this;
+				this.savingMember = true;
 
 				var member = _.clone(this.member);
 				member.date_of_birth = this.apiDateFormat(member.date_of_birth);
 
 				window.axios.put('/api/v1/members/' + this.memberId, member).then(function (response) {
+					that.savingMember = false;
 					messages.$emit('success', 'Member Updated');
 				});
 			},
@@ -523,7 +526,6 @@
 			requestApproval: function() {
 				var that=this;
 				this.loadingApproval = true;
-				this.saveMember();
 
 				var errors = false;
 				if (this.isEmpty(this.member.first_name)) { errors=true; messages.$emit('error', 'A first name is required'); }
@@ -538,6 +540,8 @@
 				}
 
 				if (!errors) {
+					this.saveMember();
+
 					window.axios.post('/api/v1/members/' + this.memberId + '/request-approval').then(function (response) {
 						that.member.pending_approval=true;
 						that.loadingApproval = false;
@@ -574,10 +578,7 @@
 
 				}).catch(
 					function (error) {
-						var errors = Object.entries(error.response.data.errors);
-						for (const [name, error] of errors) {
-							messages.$emit('error', `${error}`);
-						}
+						messages.$emit('error', error.response.data.error);
 					}
 				);
 			}
