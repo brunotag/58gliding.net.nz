@@ -16,9 +16,9 @@
 			<div v-show="addRating">
 			<h2>Add Rating</h2>
 				<div class="form form-inline form-group">
-					<select class="form-control mr-2" name="add_rating" id="add_rating" @change="selectRating($event.target.selectedIndex)" v-model="newRating.rating_id">
+					<select class="form-control mr-2" name="add_rating" id="add_rating" @change="selectRating($event.target.selectedIndex, newRating.rating_id)" v-model="newRating.rating_id">
 						<option v-bind:value="null">Select rating...</option>
-						<option v-for="rating in ratings" v-bind:value="rating.id">{{rating.name}}</option>
+						<option v-for="rating in ratings" v-bind:value="rating.id" v-if="!rating.archived">{{rating.name}}</option>
 					</select>
 					Granted Date (YYYY-MM-DD):
 					<!-- <input type="text"  value="" v-model="newRating.awarded"> -->
@@ -47,12 +47,14 @@
 				<div class="form-inline form-group">
 					<div class="mr-4">
 						Authorised by: 
-						<input class="form-control ml-2" type="search" v-on:keyup="onSearch(searchText)" v-model="searchText" placeholder="Search for member...">
+							<member-selector v-model="authorising_member_id"></member-selector>
+<!-- 						<input class="form-control ml-2" type="search" v-on:keyup="onSearch(searchText)" v-model="searchText" placeholder="Search for member...">
 						<select v-show="peopleSearchResults.length!=0" class="form-control ml-2" name="peopleSearch" id="peopleSearch" v-model="authorising_member_id">
 							<option value="0">Select...</option>
 							<option v-for="person in peopleSearchResults" v-bind:value="person.id">{{person.first_name}} {{person.last_name}} {{person.nzga_number}} {{person.club}} {{person.city}}</option>
 						</select>
 						<span v-show="peopleSearchResults.length==0" class="ml-2">No members found</span>
+						-->
 						<span class="ml-2">(e.g. CFI)</span>
 					</div>
 				</div>
@@ -68,6 +70,16 @@
 					<ul v-else>
 						<li v-for="(file, key) in files" :key="file.name">{{file.name}}</li>
 					</ul>
+				</div>
+				
+				<div class="form-inline form-group">
+					<label class="mr-1">Number:</label>
+						<span v-if="showNumber">
+							<input type="text" class="form-control mr-4" v-model="ratingNumber">
+							Last number: {{lastRatingNumber}} <button class="btn btn-sm ml-4 btn-outline-dark" v-on:click="ratingNumber=lastRatingNumber+1">Set to {{lastRatingNumber+1}}</button>
+						</span>
+						<span v-if="!showNumber">n/a</span>
+
 				</div>
 
 				<a class="btn btn-outline-dark ml-2" v-on:click="insert()">Add Rating 
@@ -153,7 +165,10 @@ export default {
 			authorising_member_id: null,
 			files: null,
 			addRating: false,
-			uploading: false
+			uploading: false,
+			showNumber: false,
+			lastRatingNumber: null,
+			ratingNumber: null
 		}
 	},
 	mounted() {
@@ -182,6 +197,7 @@ export default {
 			if (this.newRating.notes) formData.append('notes', this.newRating.notes);
 			if (this.presetExpires) formData.append('expires', this.presetExpires);
 			if (this.authorising_member_id) formData.append('authorising_member_id', this.authorising_member_id);
+			if (this.ratingNumber) formData.append('ratingNumber', this.ratingNumber);
 			if (this.files) {
 				for (var i=0; i<this.files.length; i++) {
 					formData.append('files[' + i + ']', this.files[i]);
@@ -208,6 +224,7 @@ export default {
 					that.uploading = false;
 					that.files = null;
 					that.addRating = false;
+					that.ratingNumber = null;
 				})
 				.catch(function (error) {
 					// handle error
@@ -217,12 +234,27 @@ export default {
 					console.log(error.response.data.error);
 				});
 		},
-		selectRating: function(ratingKey)
+		selectRating: function(ratingKey, ratingId)
 		{
+			var that = this;
+
 			if (ratingKey==0) return false;
 
 			//this.newRating.expires = this.ratings[ratingKey].default_expires;
 			Vue.set(this.newRating, 'expires', this.ratings[ratingKey-1].default_expires);
+
+			that.lastRatingNumber = null;
+			that.showNumber = false;
+
+			// get the max number for this rating
+			window.axios.get('/api/v1/ratings/'+ratingId+'/last-number').then(function (response) {
+				if (!response.data.error)
+				{
+					that.lastRatingNumber = response.data.data;
+					that.showNumber = true;
+				}
+				
+			});
 
 			switch (this.ratings[ratingKey-1].default_expires)
 			{
@@ -235,6 +267,8 @@ export default {
 					this.presetExpires = 'never';
 					break;
 			}
+
+
 		},
 		onSearch(search)
 		{
