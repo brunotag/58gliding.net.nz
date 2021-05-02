@@ -226,6 +226,9 @@ class TrackingApiController extends ApiController
 						$speed = $row[5];
 						$course = null;
 						$hex = $aircraft->flarm;
+						if ($hex==null) {
+							$hex = $aircraft->rego;
+						}
 						if (isset($row[6])) $vspeed = $row[6];
 						else $vspeed = null;
 
