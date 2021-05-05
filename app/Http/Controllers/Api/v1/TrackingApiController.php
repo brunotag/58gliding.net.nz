@@ -160,6 +160,8 @@ class TrackingApiController extends ApiController
 			$device_id = $data_array['id'];
 			// get the aircraft linked to this device
 			$aircraft = Aircraft::where('pi','=',$device_id)->first();
+
+			if(!$aircraft) return $this->error('Aircraft not Found. Check an aircraft in the system has the ID number '. $device_id);
 			
 			// this will store all the IDs that we successfully store in the DB
 			$ids_done = [];

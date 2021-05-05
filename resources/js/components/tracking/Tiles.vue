@@ -29,11 +29,11 @@
 			<th>Signal Strength</th>
 			<th>Member</th>
 			<th>Note</th>
-			<th>Edit</th>
+			<th class="center">Edit</th>
 		</tr>
 		<tr v-for="tile in tiles">
 			<td>{{tile.hex}}</td>
-			<td>{{shortDateToNow(createDateFromMysql(tile.last_seen))}} from <span :title="'Device ID: ' + tile.last_device_id">{{tile.last_aircraft.rego}}</span></td>
+			<td>{{shortDateToNow(createDateFromMysql(tile.last_seen))}} from <span :title="'Device ID: ' + tile.last_device_id">{{tile.last_aircraft.rego}}</span> <small class="text-muted">{{tile.last_device_id}}</small></td>
 			<td>
 				<span v-if="tile.last_strength">
 					{{tile.last_strength}}
@@ -56,12 +56,12 @@
 				<input v-if="tile.editing" v-model="tile.note" type="text" class="form-control">
 				<span v-if="!tile.editing">{{tile.note}}</span>
 			</td>
-			<td>
+			<td class="center">
 				
-				<div class="btn-group ml-4 " role="group">
-					<button v-if="!tile.editing" type="button" class="btn btn-outline-dark" v-on:click="editTile(tile)">Edit</button>
-					<button v-if="tile.editing" type="button" class="btn btn-primary" v-on:click="updateTile(tile)">Save Changes</button>
-					<button v-if="tile.editing" type="button" class="btn btn-outline-dark" v-on:click="cancelEditingTile(tile)">Cancel</button>
+				<div class="btn-group mb-0 " role="group">
+					<button v-if="!tile.editing" type="button" class="btn btn-sm btn-outline-dark" v-on:click="editTile(tile)">Edit</button>
+					<button v-if="tile.editing" type="button" class="btn btn-sm btn-primary" v-on:click="updateTile(tile)">Save Changes</button>
+					<button v-if="tile.editing" type="button" class="btn btn-sm btn-outline-dark" v-on:click="cancelEditingTile(tile)">Cancel</button>
 				</div>
 			</td>
 		</tr>
