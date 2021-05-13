@@ -9,6 +9,7 @@ use App\Http\Requests;
 use App\Models\TrackingDay;
 use App\Models\Aircraft;
 use App\Models\Aviator;
+use App\Models\Tile;
 use App\Models\Ping;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -157,34 +158,81 @@ class TrackingApiController extends ApiController
 
 			// get the device ID
 			$device_id = $data_array['id'];
-			// get the device
+			// get the aircraft linked to this device
 			$aircraft = Aircraft::where('pi','=',$device_id)->first();
-			if (!$aircraft) return $this->error('This device is not linked to an aircraft');
 
+			if(!$aircraft) return $this->error('Aircraft not Found. Check an aircraft in the system has the ID number '. $device_id);
+			
 			// this will store all the IDs that we successfully store in the DB
 			$ids_done = [];
+			$tiles = [];
 
 			foreach ($data_array['rows'] AS $data)
 			{
+				$utcdate = new DateTime();
+				$utcdate->setTimestamp((integer)$data[1]); 
+
 				switch (substr($data[2], 0, 1))
 				{
-					// person ID
+					// tile tracker. Identified by a ! at the front.
 					case '!':
 						$row = explode(',', $data[2]);
-						$member_id = substr($row[0], 1); // TBC
+						$hex = substr($row[0], 1); // Remove the ! at the beginning
 
-						// protected $fillable = ['timestamp', 'device_id', 'aircraft_id', 'member_id', 'strength'];
-						$aviator = new Aviator();
-						$aviator->ts = new DateTime();
-						$aviator->device_id = $device_id;
-						$aviator->aircraft_id = $aircraft->id;
-						$aviator->member_id = $member_id;
-						$aviator->strength = $row[1];
-						if ($aviator->save())
+						// check this tile exists and insert it into the tile DB if not
+						if (!$tile = Tile::where('hex', '=', $hex)->first())
 						{
+							$tile = new Tile();
+							$tile->hex = $hex;
+						}
+						$tile->last_seen = $utcdate->format('Y-m-d H:i:s');
+						if (is_numeric($row[1]))
+						{
+							$tile->last_strength = $row[1];
+						}
+						else
+						{
+							$tile->last_strength = null;
+						}
+						
+
+						$tile->last_device_id = $device_id;
+						if (isset($aircraft->id)) $tile->last_aircraft_id = $aircraft->id;
+						$tile->save();
+
+						// if we have a member associated with this tile, we can save this into the DB
+						if ($tile->member_id && isset($aircraft->id))
+						{
+							$aviator = new Aviator();
+							$aviator->ts = $utcdate->format('Y-m-d H:i:s');
+							$aviator->device_id = $device_id;
+							$aviator->aircraft_id = $aircraft->id;
+							$aviator->tile_id = $tile->id;
+							$aviator->member_id = $tile->member_id;
+							if (is_numeric($row[1]))
+							{
+								$aviator->strength = $row[1];
+							}
+							else
+							{
+								$tile->last_strength = null;
+							}
+
+
+							if ($aviator->save())
+							{
+								$ids_done[] = $data[0];
+							}
+						}
+						else
+						{
+							// we don't need to save it
 							$ids_done[] = $data[0];
 						}
+
 						break;
+
+					// pi location data
 					default:
 						$row = explode(',', $data[2]);
 
@@ -200,9 +248,6 @@ class TrackingApiController extends ApiController
 							if (!$this->check_table_exists($nzdate)) $this->make_table($nzdate);
 							$current_table_name = $table_name;
 						}
-
-						$utcdate = new DateTime();
-						$utcdate->setTimestamp((integer)$data[1]); 
 
 						$lat = $row[0];
 						$long = $row[2];

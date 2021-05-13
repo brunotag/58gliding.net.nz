@@ -50,6 +50,7 @@ Route::match(['post','get'],'/contestentries/loaddata', 'Apps\ContestEntriesCont
 Route::match(['post','patch'],'/contestentries/contestentries/savedata', 'Apps\ContestEntriesController@savedata')->name('contestentries.savedata');
 Route::match(['post','get'],'/contestentries/contestentries/loaddata', 'Apps\ContestEntriesController@loaddata')->name('contestentries.loaddata');
 
+Route::get('/tiles', 'Apps\TrackingController@tiles');
 Route::get('/tracking', 'Apps\TrackingController@mapbox');
 Route::get('/tracking/{year}-{month}-{day}', 'Apps\TrackingController@mapboxDay');
 Route::get('/tracking-old', 'Apps\TrackingController@index');

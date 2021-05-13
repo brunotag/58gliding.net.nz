@@ -9,5 +9,5 @@ class Aviator extends Model
 	protected $table = 'aviators';
 	public $timestamps = false;
 
-	protected $fillable = ['timestamp', 'device_id', 'aircraft_id', 'member_id', 'strength'];
+	protected $fillable = ['ts', 'device_id', 'aircraft_id', 'member_id', 'strength', 'tile_id'];
 }

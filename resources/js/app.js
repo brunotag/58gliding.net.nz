@@ -84,6 +84,7 @@ Vue.component('global-settings', require('./components/admin/GlobalSettings.vue'
 Vue.component('member-types', require('./components/admin/MemberTypes.vue').default);
 Vue.component('admin-menu', require('./components/admin/AdminMenu.vue').default);
 Vue.component('admin-imports', require('./components/admin/AdminImports.vue').default);
+Vue.component('tiles', require('./components/tracking/Tiles.vue').default);
 
 /** common components  */
 Vue.component('autosize-textarea', require('./components/widgets/AutosizeTextarea.vue').default);

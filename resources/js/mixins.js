@@ -211,6 +211,15 @@ module.exports = {
 		},
 		isValidDate: function(d) {
 			return d instanceof Date && !isNaN(d);
+		},
+		strength: function(strength)
+		{
+			var string = '<span class="badge-pill" style="background-color: #B5BAC4;"></span>';
+			if (strength>-75) string = string + '<span class="badge-pill" style="background-color: #B2C570;"></span>';
+			if (strength>-65) string = string + '<span class="badge-pill" style="background-color: #A7CD36;"></span>';
+			if (strength>-55) string = string + '<span class="badge-pill" style="background-color: #4F9634;"></span>';
+			if (strength>-40) string = string + '<span class="badge-pill" style="background-color: #168236;"></span>';
+			return string;
 		}
 	}
 }
