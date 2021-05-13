@@ -71,7 +71,7 @@ class LoadAircraft
 
 	public function load_db_from_caa()
 	{
-		if ($file = file_get_contents("https://www.aviation.govt.nz/assets/Uploads/AircraftRegisterExport.zip"))
+		if ($file = file_get_contents("https://www.aviation.govt.nz/assets/aircraft/AircraftRegisterExport.zip"))
 		{
 			Storage::disk('local')->put('aircraft.zip', $file);
 
@@ -109,7 +109,6 @@ class LoadAircraft
 			if (isset($row[1]) && $row[1]!='') {
 
 				$rego = 'ZK-'.$row[1];
-
 
 				// Update existing aircraft
 				$aircraft = Aircraft::where('rego', $rego)->first();
