@@ -4,7 +4,44 @@ The GNZ web app platform's goal is to provide a platform for anyone to build app
 
 Built on Laravel 5.8
 
-## Installation
+#  Installation
+
+For both automated or manual installation, you need
+- Git https://git-scm.com   
+
+and you need to download the code
+`git clone https://github.com/glidingnz/58gliding.net.nz.git`
+
+## Semi - Automated Installation
+
+The semi - automated installation is based on **running a virtual machine** on your computer.
+You will need a virtualiser like VirtualBox, VMWare, Hyper-V or Docker.
+
+If you don't want a virtual machine, scroll down to the [Manual Installation](#manual-installation) option.
+
+### Requirements
+- Vagrant [https://www.vagrantup.com/](https://www.vagrantup.com/)
+- [VirtualBox](https://www.virtualbox.org/wiki/Downloads) 
+
+It is possible to run the virtual machine on other [providers supported by Vagrant](https://www.vagrantup.com/docs/providers/), but that would require making some changes to the Homestead.yaml configuration file.
+See [https://laravel.com/docs/5.8/homestead](https://laravel.com/docs/5.8/homestead) for reference.
+
+### Run Vagrant
+in the root folder of the repository run 
+`vagrant up`
+this command will create a virtual machine which will host your Gliding New Zealand Web App at
+`192.168.10.11:80`
+To change this address, you will have to modify the Homestead.yaml file and recreate the virtual machine using `vagrant destroy` and then `vagrant up` again.
+
+### DNS / hosts file
+see [here](/#dns--hosts-file), but use the Vagrant host's IP instead of 127.0.0.1.
+
+### Troubleshooting
+The first time `vagrant up` runs, the virtual machine is provisioned. 
+Certain provisioning steps might fail, because of bug (we are on a superseded version of Laravel/homestead, which has some known bugs).
+In case certain steps of the provisioning fail, try `vagrant ssh` to access the virtual machine, run the step which failed manually, and gather information about the error.
+
+## Manual Installation
 
 ### Requirements
 
@@ -63,7 +100,9 @@ Instructions from https://laravel.com/docs/5.8/mix
 </VirtualHost>
 ```
 
-3. Sub sites use a subdomain e.g. piako.58gliding.net.test. Either set up a local DNS server to serve up the .test domain name OR much easier, set up  your hosts file to point to a couple of sub sites for testing e.g. 
+### DNS / hosts file
+
+Sub sites use a subdomain e.g. piako.58gliding.net.test. Either set up a local DNS server to serve up the .test domain name OR much easier, set up  your hosts file to point to a couple of sub sites for testing e.g. 
 
 ```
 127.0.0.1 58gliding.net.test
