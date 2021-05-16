@@ -53,6 +53,10 @@ setPhpVersion71 = <<-SCRIPT
     sudo update-alternatives --set phpize /usr/bin/phpize7.1
 SCRIPT
 
+setPermissionsForComposer = <<-SCRIPT
+    chmod -R 777 /home/vagrant/code/vendor/laravel/homestead/
+SCRIPT
+
 composerInstallScript = <<-SCRIPT
     cd code
     composer install
@@ -96,6 +100,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         end
     end
 
+    #Make symlinks work on Virtualbox https://github.com/laravel/docs/pull/3960/files (otherwise npm install fails)
+    config.vm.provider "virtualbox" do |v|
+        v.customize ["setextradata", :id, "VBoxInternal2/SharedFoldersEnableSymlinksCreate/v-root", "1"]
+    end
+
     if File.exist? homesteadYamlPath then
         settings = YAML::load(File.read(homesteadYamlPath))
     elsif File.exist? homesteadJsonPath then
@@ -109,6 +118,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
     Homestead.configure(config, settings)
 
+    config.vm.provision "shell", inline: setPermissionsForComposer, privileged: false, keep_color: true
     config.vm.provision "shell", inline: composerInstallScript, privileged: false, keep_color: true
     config.vm.provision "shell", inline: setPermissionsScript, privileged: false, keep_color: true
     config.vm.provision "shell", inline: cloneEnvScript, privileged: false, keep_color: true
