@@ -10,3 +10,7 @@ yarn-error.log
 storage/exports
 .DS_Store
 /.vagrant
+/public/css/app.css
+/public/css/iframe.css
+/public/js/app.js
+/public/js/grid-app.js
