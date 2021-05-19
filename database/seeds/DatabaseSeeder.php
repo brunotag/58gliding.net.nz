@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
 		{
 			factory(User::Class, 20)->create();
 		}
-		
+
 		// all enviroments including production ------------------
 		//$aircraftLoader = new LoadAircraft();
 		//$aircraftLoader->load_db_from_caa();
