@@ -66,7 +66,7 @@ class MemberUtilities {
 				,null)) AS rating_instructor_level, 
 			GROUP_CONCAT(organisations.org_id) AS org_ids
 			";
-		if (isset($org)) $select_string .= '';
+		if (isset($org)) $select_string .= ', max(org_membertype.name) AS selected_org_member_type';
 
 		$query->selectRaw($select_string);
 
@@ -103,15 +103,18 @@ class MemberUtilities {
 			if ($request->input('ex_members', 'false')!='true') {
 				$query->where('affiliates.resigned', 0);
 			}
+			// get the affiliate membertype
+			$query->leftJoin('membertypes AS org_membertype', function ($join) {
+				$join->on('org_membertype.id', '=', 'affiliates.membertype_id');
+			});
 		}
 
 		// join on a list of organisations each user belongs to. 
 		// Used with the GROUP_CONCAT in the select statement.
 		$query->leftJoin('affiliates AS organisations', function ($join) {
 			$join->on('gnz_member.id', '=', 'organisations.member_id')
-			     ->on('organisations.resigned', '=', DB::raw('0'));;
+			     ->on('organisations.resigned', '=', DB::raw('0'));
 		});
-
 
 
 		// join on the common ratings we need for sorting and display

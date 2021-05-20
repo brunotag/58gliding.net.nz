@@ -191,7 +191,7 @@
 				<td><a v-bind:href="'/members/' + result.id">{{ result.first_name }}</a></td>
 				<td><a v-bind:href="'/members/' + result.id">{{ result.last_name }}</a></td>
 				<td>{{ result.club }}</td>
-				<td>{{ clubStatus(result) }}</td>
+				<td v-if="state.org_id">{{ result.selected_org_member_type }}</td>
 				<td>{{ result.membership_type }}</td>
 				<td>{{ result.city }}</td>
 				<td>{{ result.mobile_phone }}</td>
