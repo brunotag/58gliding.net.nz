@@ -58,7 +58,7 @@ class AddEventsTable extends Migration
 
 		$org = new Org;
 		$org->name='Gliding New Zealand';
-		$org->short_name='gnz';
+		$org->short_name='GNZ';
 		$org->slug='gnz';
 		$org->gnz_code='GNZ';
 		$org->type='org';

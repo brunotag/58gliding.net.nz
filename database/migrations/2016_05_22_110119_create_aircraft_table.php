@@ -42,9 +42,9 @@ class CreateAircraftTable extends Migration
 			$table->timestamps();
 		});
 
-		$aircraftLoader = new LoadAircraft();
-		$aircraftLoader->load_db_from_caa();
-		$aircraftLoader->import_caa_db();
+		// $aircraftLoader = new LoadAircraft();
+		// $aircraftLoader->load_db_from_caa();
+		// $aircraftLoader->import_caa_db();
 	}
 
 	/**

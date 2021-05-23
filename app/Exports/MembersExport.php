@@ -52,8 +52,8 @@ class MembersExport implements FromCollection, WithHeadings, WithMapping
 		$columns[] = 'email';
 		$columns[] = 'modified';
 		$columns[] = 'created';
-		$columns[] = 'membership_type';
-		$columns[] = 'club';
+		$columns[] = 'gnz_membership_type';
+		$columns[] = 'primary_club';
 		$columns[] = 'date_joined';
 		$columns[] = 'gender';
 		$columns[] = 'address_1';
@@ -76,13 +76,15 @@ class MembersExport implements FromCollection, WithHeadings, WithMapping
 		$columns[] = 'coach';
 		$columns[] = 'contest_pilot';
 		$columns[] = 'comments';
-		// $columns[] = 'instructor';
-		// $columns[] = 'instructor_rating';
+		$columns[] = 'org_member_type';
+		$columns[] = 'org_ids';
+		$columns[] = 'instructor';
+		$columns[] = 'instructor_rating';
+		$columns[] = 'observer_number';
 		// $columns[] = 'aero_tow';
 		// $columns[] = 'winch_rating';
 		// $columns[] = 'self_launch';
 		// $columns[] = 'insttrain';
-		// $columns[] = 'observer_number';
 		// $columns[] = 'tow_pilot';
 		// $columns[] = 'awards';
 		// $columns[] = 'silver_certificate_number';
@@ -188,6 +190,11 @@ class MembersExport implements FromCollection, WithHeadings, WithMapping
 			$member->coach,
 			$member->contest_pilot,
 			$member->comments,
+			$member->selected_org_member_type,
+			$member->org_ids,
+			$member->rating_instructor,
+			$member->rating_instructor_level,
+			$member->observer_number,
 		];
 	}
 }
