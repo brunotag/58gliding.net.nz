@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use App\Models\Member;
 use App\Observers\MemberModelObserver;
+use Illuminate\Support\Facades\Schema;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,11 +19,11 @@ class AppServiceProvider extends ServiceProvider
 		//
 		$this->app->bind('mailgun.client', function() {
 			return \Http\Adapter\Guzzle6\Client::createWithConfig([
-			
+
 			]);
 		});
 
-		
+
 	}
 
 	/**
@@ -33,5 +34,6 @@ class AppServiceProvider extends ServiceProvider
 	public function boot()
 	{
 		Member::observe(MemberModelObserver::class);
+		Schema::defaultStringLength(191);
 	}
 }
