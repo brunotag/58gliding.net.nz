@@ -11,6 +11,7 @@
 |
 */
 
+
 $factory->define(App\User::class, function (Faker\Generator $faker) {
 	static $password;
 
@@ -41,8 +42,6 @@ $factory->define(App\Models\Member::class, function (Faker\Generator $faker) {
 		'login_name' => $faker->unique()->randomNumber(4),
 		'gender' => $faker->randomElement(array(null, 'M', 'F')),
 		'email' => $faker->safeEmail,
-		'access_level' => 'NORMAL',
-		'membership_type' => $faker->randomElement(array('Flying', 'Resigned', 'Flying Family', 'Mag Only')),
 		'club' => $faker->optional(0.6)->randomElement(array('TGA', 'OGC', 'PKO', 'TPO')),
 		'address_1' => $faker->streetName,
 		'address_2' => $faker->state,
@@ -81,5 +80,7 @@ $factory->define(App\Models\Member::class, function (Faker\Generator $faker) {
 		'observer_number' => $faker->optional(0.2)->numerify('##/###'),
 		'date_of_birth' => $faker->dateTimeBetween($startDate = '-70 years'),
 		'date_joined' => $faker->dateTimeBetween($startDate = '-70 years'),
+		'needs_gnz_approval' => $faker->boolean(20),
+		'gnz_membertype_id' => $faker->numberBetween(1,5)
 	];
 });
