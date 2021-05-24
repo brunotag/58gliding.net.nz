@@ -13,6 +13,7 @@
 
 	<h1>My Account</h1>
 
+
 	<form action="/update-account" method="post" class="container ">
 		{{ csrf_field() }}
 		<div class="form-group row">
@@ -168,6 +169,8 @@
 		<hr>
 
 		<h2>GNZ Details</h2>
+
+		<p> <a href="/members/{{$member->id}}/edit" class="btn btn-primary">Edit your GNZ details</a></p>
 
 		<div class="row gnz-details">
 			<div class="col-sm-6 form-horizontal">

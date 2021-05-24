@@ -186,6 +186,26 @@
 						</select>
 						<span v-if="gnzMemberTypes.length==0">Loading...</span>
 
+						<div v-if="member.gnz_membertype_id != currentGnzMemberTypeId && member.gnz_membertype_id>=2">
+							New Start Date:
+							<v-date-picker  id="start_date" v-model="newGnzMemberStartDate" :locale="{ id: 'start_date', firstDayOfWeek: 2, masks: { weekdays: 'WW', L: 'DD/MM/YYYY' } }" :popover="{ visibility: 'click' }"></v-date-picker>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="table-label col-xs-6">Start Date</td>
+					<td>
+
+						<v-date-picker  id="date_joined" v-model="member.date_joined" :locale="{ id: 'start_date', firstDayOfWeek: 2, masks: { weekdays: 'WW', L: 'DD/MM/YYYY' } }" :popover="{ visibility: 'click' }"></v-date-picker>
+
+					</td>
+				</tr>
+				<tr>
+					<td class="table-label col-xs-6">First GNZ Start Date</td>
+					<td>
+
+						<v-date-picker  id="first_date_joined" v-model="member.first_date_joined" :locale="{ id: 'start_date', firstDayOfWeek: 2, masks: { weekdays: 'WW', L: 'DD/MM/YYYY' } }" :popover="{ visibility: 'click' }"></v-date-picker>
+
 					</td>
 				</tr>
 				<tr>
@@ -373,7 +393,9 @@
 				duplicates: [], // any member duplicates, used when approving a member,
 				loadingApproval: false,
 				loadingResign: false,
-				savingMember: false
+				savingMember: false,
+				currentGnzMemberTypeId: null,
+				newGnzMemberStartDate: this.$moment().toDate()
 			}
 		},
 		mounted() {
@@ -400,6 +422,9 @@
 				window.axios.get('/api/v1/members/' + this.memberId, {params: this.state}).then(function (response) {
 					that.member = response.data.data;
 					that.member.date_of_birth = that.$moment(that.member.date_of_birth).toDate();
+					that.member.date_joined = that.$moment(that.member.date_joined).toDate();
+					that.member.first_date_joined = that.$moment(that.member.first_date_joined).toDate();
+					that.currentGnzMemberTypeId = that.member.gnz_membertype_id;
 					// convert dates to javascript for all affiliates
 					if (that.member.affiliates) {
 						that.member.affiliates.forEach(function(affiliate) {
@@ -439,9 +464,18 @@
 
 				var member = _.clone(this.member);
 				member.date_of_birth = this.apiDateFormat(member.date_of_birth);
+				member.first_date_joined = this.apiDateFormat(member.first_date_joined);
+				member.date_joined = this.apiDateFormat(member.date_joined);
+				
+				// only change the date joined to the 'new date' field if we are changing the membership type
+				if (member.gnz_membertype_id != this.currentGnzMemberTypeId && member.gnz_membertype_id>=2) {
+					member.date_joined=this.apiDateFormat(this.newGnzMemberStartDate);
+					this.member.date_joined = this.newGnzMemberStartDate;
+				}
 
 				window.axios.put('/api/v1/members/' + this.memberId, member).then(function (response) {
 					that.savingMember = false;
+					that.currentGnzMemberTypeId = member.gnz_membertype_id;
 					messages.$emit('success', 'Member Updated');
 				});
 			},

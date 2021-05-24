@@ -54,6 +54,7 @@ class MembersExport implements FromCollection, WithHeadings, WithMapping
 		$columns[] = 'created';
 		$columns[] = 'gnz_membership_type';
 		$columns[] = 'primary_club';
+		$columns[] = 'first_date_joined';
 		$columns[] = 'date_joined';
 		$columns[] = 'gender';
 		$columns[] = 'address_1';
@@ -168,6 +169,7 @@ class MembersExport implements FromCollection, WithHeadings, WithMapping
 			$member->created,
 			$member->membership_type,
 			$member->club,
+			$member->first_date_joined,
 			$member->date_joined,
 			$member->gender,
 			$member->address_1,
