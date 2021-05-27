@@ -16,14 +16,14 @@
 			<div v-show="addRating">
 			<h2>Add Rating</h2>
 				<div class="form form-inline form-group">
-					<select class="form-control mr-2" name="add_rating" id="add_rating" @change="selectRating($event.target.selectedIndex, newRating.rating_id)" v-model="newRating.rating_id">
+					<select class="form-control mr-2" name="add_rating" id="add_rating" @change="selectRating(newRating)" v-model="newRating">
 						<option v-bind:value="null">Select rating...</option>
-						<option v-for="rating in ratings" v-bind:value="rating.id" v-if="!rating.archived">{{rating.name}}</option>
+						<option v-for="rating in ratings" :key="rating.id" v-bind:value="rating" v-if="!rating.archived">{{rating.name}}</option>
 					</select>
 					Granted Date (YYYY-MM-DD):
 					<!-- <input type="text"  value="" v-model="newRating.awarded"> -->
 					<div class="ml-2 mr-2">
-						<v-date-picker v-model="newRating.awarded" :locale="{ id: 'nz', firstDayOfWeek: 2, masks: { weekdays: 'WW', L: 'DD/MM/YYYY' } }"></v-date-picker>
+						<v-date-picker v-model="newRatingDate" :locale="{ id: 'nz', firstDayOfWeek: 2, masks: { weekdays: 'WW', L: 'DD/MM/YYYY' } }"></v-date-picker>
 					</div>
 					Expires:
 					<select class="form-control ml-2 " name="expires" id="expires" v-model="presetExpires">
@@ -35,13 +35,13 @@
 					</select>
 					
 					<span v-show="presetExpires=='custom'">
-						<input  type="text" class="form-control" v-model="newRating.expires" size="5"> Months
+						<input type="text" class="form-control" v-model="newRatingExpires" size="5"> Months
 					</span>
 
 				</div>
 
 				<div class="form-group">
-					Notes <textarea class="form-control" name="notes" id="" cols="30" rows="2" v-model="newRating.notes"></textarea>
+					Notes <textarea class="form-control" name="notes" id="" cols="30" rows="2" v-model="newRatingNotes"></textarea>
 				</div>
 				
 				<div class="form-inline form-group">
@@ -159,7 +159,10 @@ export default {
 			loading: false,
 			presetExpires: 'never',
 			test: '',
-			newRating: {}, // the object to store the new rating details
+			newRating: null, // the object to store the new rating details
+			newRatingDate: null,
+			newRatingExpires: null,
+			newRatingNotes: null,
 			peopleSearchResults: [],
 			searchText: '',
 			authorising_member_id: null,
@@ -172,7 +175,7 @@ export default {
 		}
 	},
 	mounted() {
-		this.newRating.awarded = new Date();
+		this.newRatingDate = new Date();
 		this.load();
 	},
 	methods: {
@@ -181,7 +184,7 @@ export default {
 			window.axios.get('/api/v1/ratings').then(function (response) {
 				that.loaded = true;
 				that.ratings = response.data.data;
-				that.newRating.rating_id = null;
+				that.newRating = null;
 			});
 
 			this.getMemberRatings();
@@ -191,22 +194,22 @@ export default {
 
 			var formData = new FormData();
 
-			if (this.newRating.rating_id) formData.append('rating_id', this.newRating.rating_id);
+			if (!this.newRating) {
+				messages.$emit('error', 'A rating is required');
+				return false;
+			}
+			
+			if (this.newRating.id) formData.append('rating_id', this.newRating.id);
 			if (this.memberId) formData.append('member_id', this.memberId);
-			if (this.newRating.awarded) formData.append('awarded', this.$moment(this.newRating.awarded).format('YYYY-MM-DD'));
-			if (this.newRating.notes) formData.append('notes', this.newRating.notes);
-			if (this.presetExpires) formData.append('expires', this.presetExpires);
+			if (this.newRatingDate) formData.append('awarded', this.$moment(this.newRatingDate).format('YYYY-MM-DD'));
+			if (this.newRatingNotes) formData.append('notes', this.newRatingNotes);
+			if (this.presetExpires) formData.append('expires', this.newRatingExpires);
 			if (this.authorising_member_id) formData.append('authorising_member_id', this.authorising_member_id);
 			if (this.ratingNumber) formData.append('ratingNumber', this.ratingNumber);
 			if (this.files) {
 				for (var i=0; i<this.files.length; i++) {
 					formData.append('files[' + i + ']', this.files[i]);
 				}
-			}
-
-			if (!formData.has('rating_id')) {
-				messages.$emit('error', 'A rating is required');
-				return false;
 			}
 
 			that.uploading = true;
@@ -224,7 +227,9 @@ export default {
 					that.uploading = false;
 					that.files = null;
 					that.addRating = false;
-					that.ratingNumber = null;
+					that.newRating = null;
+					that.newRatingNotes = null;
+					that.newRatingExpires = null;
 				})
 				.catch(function (error) {
 					// handle error
@@ -234,20 +239,21 @@ export default {
 					console.log(error.response.data.error);
 				});
 		},
-		selectRating: function(ratingKey, ratingId)
+		selectRating: function(newRating)
 		{
+			console.log(newRating);
+
 			var that = this;
 
-			if (ratingKey==0) return false;
+			if (newRating==null) return false;
 
-			//this.newRating.expires = this.ratings[ratingKey].default_expires;
-			Vue.set(this.newRating, 'expires', this.ratings[ratingKey-1].default_expires);
+			Vue.set(this.newRating, 'expires', newRating.default_expires);
 
 			that.lastRatingNumber = null;
 			that.showNumber = false;
 
 			// get the max number for this rating
-			window.axios.get('/api/v1/ratings/'+ratingId+'/last-number').then(function (response) {
+			window.axios.get('/api/v1/ratings/'+newRating.id+'/last-number').then(function (response) {
 				if (!response.data.error)
 				{
 					that.lastRatingNumber = response.data.data;
@@ -256,12 +262,12 @@ export default {
 				
 			});
 
-			switch (this.ratings[ratingKey-1].default_expires)
+			switch (newRating.default_expires)
 			{
 				case 12:
 				case 24:
 				case 60:
-					this.presetExpires = this.ratings[ratingKey-1].default_expires;
+					this.presetExpires = newRating.default_expires;
 					break;
 				case null:
 					this.presetExpires = 'never';
