@@ -20,7 +20,7 @@
 						<option v-bind:value="null">Select rating...</option>
 						<option v-for="rating in ratings" :key="rating.id" v-bind:value="rating" v-if="!rating.archived">{{rating.name}}</option>
 					</select>
-					Granted Date (YYYY-MM-DD):
+					Granted Date:
 					<!-- <input type="text"  value="" v-model="newRating.awarded"> -->
 					<div class="ml-2 mr-2">
 						<v-date-picker v-model="newRatingDate" :locale="{ id: 'nz', firstDayOfWeek: 2, masks: { weekdays: 'WW', L: 'DD/MM/YYYY' } }"></v-date-picker>
@@ -48,13 +48,6 @@
 					<div class="mr-4">
 						Authorised by: 
 							<member-selector v-model="authorising_member_id"></member-selector>
-<!-- 						<input class="form-control ml-2" type="search" v-on:keyup="onSearch(searchText)" v-model="searchText" placeholder="Search for member...">
-						<select v-show="peopleSearchResults.length!=0" class="form-control ml-2" name="peopleSearch" id="peopleSearch" v-model="authorising_member_id">
-							<option value="0">Select...</option>
-							<option v-for="person in peopleSearchResults" v-bind:value="person.id">{{person.first_name}} {{person.last_name}} {{person.nzga_number}} {{person.club}} {{person.city}}</option>
-						</select>
-						<span v-show="peopleSearchResults.length==0" class="ml-2">No members found</span>
-						-->
 						<span class="ml-2">(e.g. CFI)</span>
 					</div>
 				</div>
@@ -137,6 +130,7 @@
 			No Ratings Yet
 		</div>
 
+		<button v-on:click="load()">Reload</button>
 
 	</div>
 </template>
@@ -198,12 +192,12 @@ export default {
 				messages.$emit('error', 'A rating is required');
 				return false;
 			}
-			
+
 			if (this.newRating.id) formData.append('rating_id', this.newRating.id);
 			if (this.memberId) formData.append('member_id', this.memberId);
 			if (this.newRatingDate) formData.append('awarded', this.$moment(this.newRatingDate).format('YYYY-MM-DD'));
 			if (this.newRatingNotes) formData.append('notes', this.newRatingNotes);
-			if (this.presetExpires) formData.append('expires', this.newRatingExpires);
+			if (this.newRatingExpires) formData.append('expires', this.newRatingExpires);
 			if (this.authorising_member_id) formData.append('authorising_member_id', this.authorising_member_id);
 			if (this.ratingNumber) formData.append('ratingNumber', this.ratingNumber);
 			if (this.files) {
@@ -247,7 +241,8 @@ export default {
 
 			if (newRating==null) return false;
 
-			Vue.set(this.newRating, 'expires', newRating.default_expires);
+			//Vue.set(this.newRating, 'expires', newRating.default_expires);
+			this.newRatingExpires = newRating.default_expires;
 
 			that.lastRatingNumber = null;
 			that.showNumber = false;
@@ -304,7 +299,11 @@ export default {
 				for (var i=0; i<that.memberRatings.length; i++) {
 					that.memberRatings[i].timeToExpire = moment(that.memberRatings[i].expires).fromNow();
 				}
-			});
+			}).catch(
+					function (error) {
+						messages.$emit('error', error.response.data.error);
+					}
+				);
 		},
 		onChangeFileUpload: function() {
 			this.files = this.$refs.file.files;

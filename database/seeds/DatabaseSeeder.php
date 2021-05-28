@@ -20,10 +20,16 @@ class DatabaseSeeder extends Seeder
 	{
 		$faker = Faker\Factory::create();
 
+
 		$env = getenv('APP_ENV');
 		Model::unguard();
 		DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 		
+		// User::truncate(); // don't remove the default root user
+		Member::truncate();
+		Affiliate::truncate();
+
+
 		// local enviroment only ------------------
 		if ($env=='local')
 		{
@@ -42,6 +48,23 @@ class DatabaseSeeder extends Seeder
 
 		// load a heap of events
 		factory(Event::class, 500)->create();
+
+
+		$password = Hash::make('pass');
+
+		User::create([
+			'first_name' => 'Admin',
+			'email' => 'admin@pear.co.nz',
+			'password' => $password,
+			'activated' => 1
+		]);
+
+		User::create([
+			'first_name' => 'Admin 2',
+			'email' => 'admin2@pear.co.nz',
+			'password' => $password,
+			'activated' => 1
+		]);
 
 
 		// insert a number of member types for all clubs

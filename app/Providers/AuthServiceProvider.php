@@ -123,94 +123,154 @@ class AuthServiceProvider extends ServiceProvider
 		});
 
 
-		// optionally pass in a specific organisation object. Otherwise it uses the currently viewed organisation.
-		Gate::define('club-admin', function ($user, $org=NULL) {
-
-			// check if the given org is an ID or an object
-			if (is_integer($org)) {
-				// then just use that, not load the org from the DB again
-				$org_id = $org;
-				$org = new stdClass(); // create an empty org
-				$org->id = $org_id; // give it ONLY the ID attribute, as that's all we use below...
-			}
-
-			// check if we are current in an org
-			if ($org==NULL && $current_org = Request::get('_ORG'))
-			{
-				$org = $current_org;
-			}
-			if (!$org) return false;
-			if (!isset($org->id)) return false;
-
-			$variable_name = 'is_club_admin_' . $org->id;
-
-			// check if we've already approved this
-			if (isset($user->$variable_name)) return $user->$variable_name;
-
+		// optionally pass in an array of organisations, an org ID or a single org. Otherwise it uses the currently viewed organisation.
+		Gate::define('club-admin', function ($user, $orgs=NULL) {
 			if (Gate::allows('admin')) return true; // check above first!
 
-
-			if (!$org) return false;
-
-			if ($role = Role::where('slug','club-admin')->first())
+			// check if we are current in an org
+			if ($orgs==NULL && $current_org = Request::get('_ORG'))
 			{
+				$orgs = Array($current_org);
+			}
 
-				$userRole = RoleUser::where('role_id', $role->id)->where('user_id', $user->id)->where('org_id', $org->id)->first();
+			// check if the given org is an ID or an object
+			if (is_integer($orgs)) {
+				// then just use that, not load the org from the DB again
+				$org_id = $orgs;
+				$org = new stdClass(); // create an empty org
+				$org->id = $org_id; // give it ONLY the ID attribute, as that's all we use below...
+				$orgs = Array($org);
+			}
 
-				if ($userRole) {
-					$user->$variable_name=true;
-					return true;
+			// check if we were passed a collection of affiliates
+			if (is_a($orgs, 'Illuminate\Database\Eloquent\Collection')) 
+			{
+				$affiliates = $orgs->all();
+				$orgs = Array();
+				foreach ($affiliates AS $affiliate) {
+					$org = new stdClass();
+					$org->id = $affiliate->org_id;
+					$orgs[]=$org;
 				}
 			}
 
-			$user->$variable_name=false;
+			// check if orgs is multiple, if not make it so
+			if (!is_array($orgs))
+			{
+				$orgs = Array($orgs);
+			}
+			if (!$orgs) return false;
+			if (count($orgs)==0) return false;
+
+			// if we hit any approved ors, return true
+			foreach ($orgs AS $org)
+			{
+				if (!isset($org->id)) {
+					return false;
+				}
+				$variable_name = 'is_club_admin_' . $org->id;
+
+				// check if we've already approved this
+				if (isset($user->$variable_name)) {
+					if ($user->$variable_name==true) return true;
+				}
+				if ($role = Role::where('slug','club-admin')->first())
+				{
+					$userRole = RoleUser::where('role_id', $role->id)->where('user_id', $user->id)->where('org_id', $org->id)->first();
+
+					if ($userRole) {
+						$user->$variable_name=true;
+						return true; exit();
+					}
+				}
+				$user->$variable_name=false;
+			}
+
 			return false;
 		});
 
 
 		// optionally pass in a specific organisation object. Otherwise it uses the currently viewed organisation.
-		Gate::define('club-member', function ($user, $org=NULL) {
+		Gate::define('club-member', function ($user, $orgs=NULL) {
+
+			if (Gate::allows('admin')) return true; // check above first!
+			if (Gate::allows('club-admin', $orgs)) return true; // check above first!
 
 			// check if we are current in an org
-			if ($org==NULL && $current_org = Request::get('_ORG'))
+			if ($orgs==NULL && $current_org = Request::get('_ORG'))
 			{
-				$org = $current_org;
+				$orgs = Array($current_org);
 			}
-			if (!$org) return false;
 
-			// check if we've already approved this
-			if (isset($this->club_member[$org->id])) return $this->club_member[$org->id];
+			// check if the given org is an ID or an object
+			if (is_integer($orgs)) {
+				// then just use that, not load the org from the DB again
+				$org_id = $orgs;
+				$org = new stdClass(); // create an empty org
+				$org->id = $org_id; // give it ONLY the ID attribute, as that's all we use below...
+				$orgs = Array($org);
+			}
 
-			if (Gate::allows('club-admin', $org)) return true; // check above first!
-
-
-			// check if we're a normal club member type user
-			if ($role = Role::where('slug','club-member')->first())
+			// check if we were passed a collection of affiliates
+			if (is_a($orgs, 'Illuminate\Database\Eloquent\Collection')) 
 			{
-
-				// check if a role has been specified
-				$userRole = RoleUser::where('role_id', $role->id)->where('user_id', $user->id)->where('org_id', $org->id)->first();
-
-				if ($userRole) {
-					$this->club_member[$org->id] = true;
-					return true;
+				$affiliates = $orgs->all();
+				$orgs = Array();
+				foreach ($affiliates AS $affiliate) {
+					$org = new stdClass();
+					$org->id = $affiliate->org_id;
+					$orgs[]=$org;
 				}
+			}
 
-				// check if this user is in the GNZ DB as a current member
-				// first get the member ID
-				if ($member = Member::where('nzga_number', $user->gnz_id)->first())
+			// check if orgs is multiple, if not make it so
+			if (!is_array($orgs))
+			{
+				$orgs = Array($orgs);
+			}
+			if (!$orgs) return false;
+			if (count($orgs)==0) return false;
+
+			// if we hit any approved ors, return true
+			foreach ($orgs AS $org)
+			{
+				// check if we've already approved this
+				if (isset($this->club_member[$org->id])) return $this->club_member[$org->id];
+
+				// check if we're a normal club member type user
+				if ($role = Role::where('slug','club-member')->first())
 				{
-					// get the affiliate details
-					$affiliate = Affiliate::where('org_id', $org->id)->where('member_id', $member->id)->whereNotNull('end_date')->first();
+					// check if we've already approved this
+					$variable_name = 'is_club_member_' . $org->id;
+					// check if we've already approved this
+					if (isset($user->$variable_name)) {
+						if ($user->$variable_name==true) return true;
+					}
 
-					if ($affiliate) {
-						$user->variable_name = true;
+					// check if a role has been specified
+					$userRole = RoleUser::where('role_id', $role->id)->where('user_id', $user->id)->where('org_id', $org->id)->first();
+
+					if ($userRole) {
+						$this->club_member[$org->id] = true;
 						return true;
 					}
+
+					// check if this user is in the GNZ DB as a current member
+					// first get the member ID
+					if ($member = Member::where('nzga_number', $user->gnz_id)->first())
+					{
+						// get the affiliate details
+						$affiliate = Affiliate::where('org_id', $org->id)->where('member_id', $member->id)->whereNotNull('end_date')->first();
+
+						if ($affiliate) {
+							$user->variable_name = true;
+							return true;
+						}
+					}
 				}
+				$user->$variable_name=false;
 			}
 
-			$this->club_member[$org->id]=false;
 			return false;
 		});
 
