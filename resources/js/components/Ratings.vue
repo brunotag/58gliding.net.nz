@@ -130,8 +130,6 @@
 			No Ratings Yet
 		</div>
 
-		<button v-on:click="load()">Reload</button>
-
 	</div>
 </template>
 
