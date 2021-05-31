@@ -45,6 +45,7 @@
 				'loggedIn' => (Auth::user()!=null) ? true : false,
 				'admin' => (Auth::user()!=null && Auth::user()->can('admin')) ? true : false,
 				'contestAdmin' => (Auth::user()!=null && Auth::user()->can('contest-admin')) ? true : false,
+				'anyClubAdmin' => (Auth::user()!=null && Auth::user()->can('any-club-admin')) ? true : false,
 				'clubAdmin' => (Auth::user()!=null && Auth::user()->can('club-admin')) ? true : false,
 				'clubMember' => (Auth::user()!=null && Auth::user()->can('club-member')) ? true : false,
 				'editAwards' => (Auth::user()!=null && Auth::user()->can('edit-awards')) ? true : false,

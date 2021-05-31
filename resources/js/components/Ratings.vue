@@ -41,7 +41,7 @@
 				</div>
 
 				<div class="form-group">
-					Notes <textarea class="form-control" name="notes" id="" cols="30" rows="2" v-model="newRatingNotes"></textarea>
+					Notes (Available to all GNZ members)<textarea class="form-control" name="notes" id="" cols="30" rows="2" v-model="newRatingNotes"></textarea>
 				</div>
 				
 				<div class="form-inline form-group">
@@ -52,17 +52,21 @@
 					</div>
 				</div>
 				
-				<div class="form-inline form-group">
+				<div class=" form-group">
+					<div>
 					<label class="mr-1">Upload Files:</label>
-					<div class="custom-file col-3 mr-2">
-						<input type="file" class="custom-file-input" id="file" ref="file" multiple  v-on:change="onChangeFileUpload()" />
-						<label class="custom-file-label" for="file">Choose files</label>
+						<div class="custom-file col-3 mr-2">
+							<input type="file" class="custom-file-input" id="file" ref="file" multiple  v-on:change="onChangeFileUpload()" />
+							<label class="custom-file-label" for="file">Choose files</label>
+						</div>
+						
+						<span v-if="!files || !files.length">No files selected</span>
+						<ul v-else>
+							<li v-for="(file, key) in files" :key="file.name">{{file.name}}</li>
+						</ul>
 					</div>
 					
-					<span v-if="!files || !files.length">No files selected</span>
-					<ul v-else>
-						<li v-for="(file, key) in files" :key="file.name">{{file.name}}</li>
-					</ul>
+					(Files are only available to club administrators)
 				</div>
 				
 				<div class="form-inline form-group">
@@ -102,7 +106,10 @@
 					ratingNearlyExpired(result.expires) ? 'warning' : '',
 					ratingExpired(result.expires) ? 'danger' : ''
 					]"> 
-					<td><a v-bind:href="'/members/' + memberId + '/ratings/' + result.id + '/'">{{result.name}}</a></td>
+					<td>
+						<a v-if="clubAdmin" v-bind:href="'/members/' + memberId + '/ratings/' + result.id + '/'">{{result.name}}</a>
+						<span v-if="!clubAdmin">{{result.name}}</span>
+					</td>
 					<td><span v-if="result.number">{{result.number}}</span></td>
 					<td>{{formatDate(result.awarded)}}</td>
 					<td>
@@ -163,12 +170,14 @@ export default {
 			uploading: false,
 			showNumber: false,
 			lastRatingNumber: null,
-			ratingNumber: null
+			ratingNumber: null,
+			clubAdmin: false
 		}
 	},
 	mounted() {
 		this.newRatingDate = new Date();
 		this.load();
+		this.clubAdmin = window.Laravel.clubAdmin;
 	},
 	methods: {
 		load: function() {

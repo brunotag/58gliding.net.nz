@@ -33,10 +33,8 @@ class RatingMemberApiController extends ApiController
 			return $this->error('Member not found');
 		}
 
-		//print_r(Gate::check('club-admin', $member->affiliates)); exit();
-
 		// only club members (and thus club admins or admins), awards officer or membership viewers can view ratings
-		if(!(Gate::check('club-admin', $member->affiliates) || 
+		if(!(Gate::check('gnz-member') || 
 			Gate::check('edit-awards') || 
 			Gate::check('membership-view')))
 		{
