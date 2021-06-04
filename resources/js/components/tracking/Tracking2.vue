@@ -1417,8 +1417,14 @@ a.flight-follow-icon:hover
 			this.map.setStyle(this.mapStyles[style]);
 		},
 		getFlightFollowing: function(rego) {
+			if (typeof rego != "string") return [];
+
 			var result = this.omaFlightFollowing.filter(obj => {
-				return obj.Rego === rego
+				if (typeof obj.Rego != "string") return false;
+				if (obj.Rego.length==2) {
+					obj.Rego = 'G'+ obj.Rego;
+				}
+				return obj.Rego.toUpperCase() == rego.toUpperCase();
 			});
 			return result;
 
@@ -1441,6 +1447,7 @@ a.flight-follow-icon:hover
 				that.omaFlightFollowing = response.data;
 			});
 			
+			// // example data
 			// this.omaFlightFollowing = [
 			// 	{
 			// 		"Id": 9,
@@ -1460,7 +1467,7 @@ a.flight-follow-icon:hover
 			// 		"Id": 10,
 			// 		"ClubID": 0,
 			// 		"PilotID": 51,
-			// 		"Rego": "GNM",
+			// 		"Rego": "nm",
 			// 		"PilotName": "Brian Savage",
 			// 		"PilotPhone": "021 619 539",
 			// 		"AircraftType": "duo",
