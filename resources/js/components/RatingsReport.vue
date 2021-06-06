@@ -21,6 +21,8 @@
 				<th class="hidden-xs">GNZ#</th>
 				<th>Instructor?</th>
 				<th>QGP?</th>
+				<th>XCP?</th>
+				<th>Passenger Rating?</th>
 				<th>BFR</th>
 				<th>Medical</th>
 				<th>Passengers</th>
@@ -34,10 +36,18 @@
 					</td>
 					<td class="hidden-xs">{{rating.nzga_number}}</td>
 					<td>
-						<span class="d-md-none">Instructor: </span><span class="fa fa-check" v-if="rating.instructor"></span><span class="fa fa-times d-md-none" v-if="!rating.instructor"></span>
+						<span class="d-md-none">Instructor: </span>
+							<span class="fa fa-check" v-if="is_instructor(rating)"></span><span class="fa fa-times d-md-none" v-if="!is_instructor(rating)"></span>
+
 					</td>
 					<td>
 						<span class=" d-md-none">QGP: </span><span class="fa fa-check" v-if="rating.qgp_awarded!=null"></span><span class="fa fa-times d-md-none" v-if="!rating.qgp_awarded"></span>
+					</td>
+					<td>
+						<span class=" d-md-none">XCP: </span><span class="fa fa-check" v-if="rating.xcp_awarded!=null"></span><span class="fa fa-times d-md-none" v-if="!rating.xcp_awarded"></span>
+					</td>
+					<td>
+						<span class=" d-md-none">Passenger Rating: </span><span class="fa fa-check" v-if="rating.passenger_awarded!=null"></span><span class="fa fa-times d-md-none" v-if="!rating.passenger_awarded"></span>
 					</td>
 					<td v-bind:class="[ bfrGood(rating) ]">
 						<span class="fa fa-check" v-if="bfrGood(rating)=='success'"></span>
@@ -71,13 +81,14 @@
 						<span class="fa fa-check" v-if="passengersGood(rating)=='success'"></span>
 						<span class="fa fa-exclamation-triangle" v-if="passengersGood(rating)=='warning'"></span>
 						<span class="fa fa-times error" v-if="passengersGood(rating)=='danger'"></span>
-						<span v-if="!rating.qgp_awarded">No QGP.</span>
+						<span v-if="!is_qgp_or_xcp(rating)">No QGP, XCP or Passenger Rating.</span>
 						<span v-if="!rating.medical_passenger_expires">No medical.</span>
 						<span v-if="!rating.bfr_expires || ratingExpired(rating.bfr_expires)"> No BFR.</span>
+						<span v-if="ratingNearlyExpired(rating.bfr_expires)"> BFR expires Soon.</span>
 
 						<span v-if="ratingNearlyExpired(rating.medical_passenger_expires)">Medical expires {{rating.medical_passenger_expires_togo}}</span>
 						<span v-if="ratingExpired(rating.medical_passenger_expires)">Medical expired {{rating.medical_passenger_expires_togo}}</span>
-						<span v-if="passengersGood(rating)=='success'">Medical expires {{rating.medical_passenger_expires_togo}}</span>
+						<span v-if="passengersGood(rating)=='success'">Medical for passenger expires {{rating.medical_passenger_expires_togo}}</span>
 					</td>
 					<td class="d-none d-md-table-cell" v-if="allowsEdit">
 						<a v-bind:href="'/members/' + rating.id + '/ratings?from=ratings'" class="btn btn-xs btn-primary">Edit</a>
@@ -108,6 +119,8 @@ export default {
 	created: function () {
 		this.loadRatings();
 	},
+	computed: {
+	},
 	methods: {
 		getDomain: function() {
 			return window.Laravel.APP_DOMAIN;
@@ -120,6 +133,12 @@ export default {
 
 				//var timeagoInstance = timeago();
 				for (var i=0; i<that.ratings.length; i++) {
+
+					// check if the passenger expire time is more than the medical expire time
+					if (that.ratings[i].medical_expires < that.ratings[i].medical_passenger_expires) {
+						that.ratings[i].medical_passenger_expires = that.ratings[i].medical_expires;
+					}
+
 					// that.ratings[i].bfr_expires_togo = timeagoInstance.format(that.ratings[i].bfr_expires);
 					// that.ratings[i].medical_expires_togo = timeagoInstance.format(that.ratings[i].medical_expires);
 					// that.ratings[i].medical_passenger_expires_togo = timeagoInstance.format(that.ratings[i].medical_passenger_expires);
@@ -131,27 +150,33 @@ export default {
 			});
 		},
 		passengersGood: function(rating) {
-			if (this.ratingNearlyExpired(rating.bfr_expires)) return 'warning';
+			if (!this.is_qgp_or_xcp(rating)) return 'danger';
 			if (this.ratingExpired(rating.bfr_expires)) return 'danger';
 			if (!rating.bfr_expires) return 'danger';
-			if (this.ratingNearlyExpired(rating.medical_passenger_expires)) return 'warning';
 			if (this.ratingExpired(rating.medical_passenger_expires)) return 'danger';
 			if (!rating.medical_passenger_expires) return 'danger';
-			if (!rating.qgp_awarded) return 'danger';
+			if (this.ratingNearlyExpired(rating.medical_passenger_expires)) return 'warning';
+			if (this.ratingNearlyExpired(rating.bfr_expires)) return 'warning';
 			return 'success';
 		},
 		bfrGood: function(rating) {
-			if (this.ratingNearlyExpired(rating.bfr_expires)) return 'warning';
 			if (this.ratingExpired(rating.bfr_expires)) return 'danger';
+			if (this.ratingNearlyExpired(rating.bfr_expires)) return 'warning';
 			if (!rating.bfr_expires) return 'info';
 			return 'success';
 		},
 		medicalGood: function(rating) {
-			if (this.ratingNearlyExpired(rating.medical_expires)) return 'warning';
 			if (this.ratingExpired(rating.medical_expires)) return 'danger';
+			if (this.ratingNearlyExpired(rating.medical_expires)) return 'warning';
 			if (!rating.medical_awarded) return 'info';
 			return 'success';
-		}
+		},
+		is_qgp_or_xcp: function(rating) {
+			return rating.qgp_awarded || rating.xcp_awarded || rating.passenger_awarded;
+		},
+		is_instructor: function(rating) {
+			return rating.instructor || rating.insta_awarded || rating.instb_awarded || rating.instc_awarded || rating.instd_awarded;
+		},
 	}
 }
 </script>

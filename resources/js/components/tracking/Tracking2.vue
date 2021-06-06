@@ -201,7 +201,28 @@ html, body,
 	margin-left: 0;
 	margin-right: 0;
 }
+
+.flight-following ul {
+	list-style: none;
+	margin-left: 0;
+	padding-left: 0;
+}
+.flight-following li {
+	list-style: none;
+	margin-left: 0;
+	padding-left: 0;
+}
+.flight-following label {
+	color: #888;
+}
+a.flight-follow-icon,
+a.flight-follow-icon:visited,
+a.flight-follow-icon:hover
+{
+	color: #FFF;
+}
 </style>
+
 
 <template>
 <div class="tracking" id="tracking">
@@ -253,10 +274,12 @@ html, body,
 					<table class="legend">
 						<tr v-for="craft in filteredAircraft" v-on:click="selectAircraft(craft)" class="hover-row">
 							<td>
-								<div class="aircraft-badge" 
-									v-bind:style="{backgroundColor: '#'+craft.colour}">
-									{{craft.legend}}
-								</div>
+									<div class="aircraft-badge" 
+										v-bind:style="{backgroundColor: '#'+craft.colour}">
+										{{craft.legend}}
+										<a v-if="getFlightFollowing(craft.rego).length>0" href="#" v-on:click.prevent="showFlightFollowing = true" class="flight-follow-icon"><span class="fa fa-clock"></span></a>
+									</div>
+
 							</td>
 							<td v-show="showLegend">
 
@@ -309,6 +332,7 @@ html, body,
 				<div class="detail">{{shortDateToNow(createDateFromMysql(selectedPoint.thetime))}}</div>
 				<div class="detail">{{formatType(selectedPoint.type)}}</div>
 				<div class="detail">
+					<button v-if="getFlightFollowing(selectedAircraft.rego).length>0" class="fa fa-clock btn-outline-dark btn btn-xs  ml-1 mt-1 pr-2 pl-2" v-on:click="showFlightFollowing=!showFlightFollowing" v-bind:class="[showFlightFollowing ? 'active' : '']"></button>
 					<button class="fa fa-chart-line btn-outline-dark btn btn-xs  ml-1 mt-1 pr-2 pl-2" v-on:click="showCoordDetails=!showCoordDetails" v-bind:class="[showCoordDetails ? 'active' : '']"></button>
 					<button class="fa fa-list-ul btn-outline-dark btn btn-xs  ml-1 mt-1 pr-2 pl-2" v-on:click="showPanel('showFlightLog')" v-bind:class="[showFlightLog ? 'active' : '']"></button>
 				</div>
@@ -333,6 +357,46 @@ html, body,
 	</div>
 
 
+	<div class="day-selector flight-following" v-show="showFlightFollowing" v-if="selectedAircraft">
+		
+		<button class="btn btn-outline-dark btn-sm mb-2 float-right" v-on:click="showFlightFollowing = false">Close</button>
+
+		<h4>Flight Following for {{selectedAircraft.rego}}</h4>
+
+		<div v-if="!getFlightFollowing(selectedAircraft.rego).length>0">
+			<span class="warning">
+				<span class="fa fa-exclamation-triangle"></span> No flight following for {{selectedAircraft.rego}}</span>
+		</div>
+
+		<div v-if="getFlightFollowing(selectedAircraft.rego).length>0">
+			<ul>
+				<li>
+					<label>Pilot Name</label>
+					<span>{{getFlightFollowing(selectedAircraft.rego)[0].PilotName}}</span>
+				</li>
+				<li>
+					<label>Pilot Phone</label>
+					<span>{{getFlightFollowing(selectedAircraft.rego)[0].PilotPhone}}</span>
+				</li>
+				<li>
+					<label>Follower Name</label>
+					<span>{{getFlightFollowing(selectedAircraft.rego)[0].FFAgentName}}</span>
+				</li>
+				<li>
+					<label>Follower Phone</label>
+					<span>{{getFlightFollowing(selectedAircraft.rego)[0].FFAgentPhone}}</span>
+				</li>
+				<li>
+					<label>Notes</label>
+					<span>{{getFlightFollowing(selectedAircraft.rego)[0].Notes}}</span>
+				</li>
+			</ul>
+
+			<a href="#" v-on:click.prevent="showFollowingRaw=!showFollowingRaw">Show Raw Data</a>
+
+			<pre v-if="showFollowingRaw">{{getFlightFollowing(selectedAircraft.rego)[0]}}</pre>
+		</div>
+	</div>
 
 	<div class="day-selector" v-show="showDaySelector" v-if="days">
 
@@ -518,6 +582,8 @@ html, body,
 				showCoordDetails: false,
 				showAircraftDetails: false,
 				showFlightLog: false,
+				showFlightFollowing: false,
+				showFollowingRaw: false,
 
 				legendShowAgl: true,
 				legendSort: ['hasAircraft','legend'],
@@ -560,6 +626,8 @@ html, body,
 				mapMarkers: [],
 				mapFlying: false,
 				fitBoundsStarted: false,
+
+				omaFlightFollowing: [],
 
 				currentStyle: 'terrain',
 				mapStyles: {
@@ -897,6 +965,8 @@ html, body,
 			var pings = 1;
 			//if (this.showTrails==false) pings=3;
 			var that = this;
+
+			this.loadOmaFlightFollowing();
 
 			window.axios.get('/api/v2/tracking/' + that.flyingDay + '/' + pings).then(function (response) {
 
@@ -1345,6 +1415,69 @@ html, body,
 
 			this.currentStyle = style;
 			this.map.setStyle(this.mapStyles[style]);
+		},
+		getFlightFollowing: function(rego) {
+			if (typeof rego != "string") return [];
+
+			var result = this.omaFlightFollowing.filter(obj => {
+				if (typeof obj.Rego != "string") return false;
+				if (obj.Rego.length==2) {
+					obj.Rego = 'G'+ obj.Rego;
+				}
+				return obj.Rego.toUpperCase() == rego.toUpperCase();
+			});
+			return result;
+
+		},
+		loadOmaFlightFollowing: function() {
+			var that = this;
+			var config = {
+			  headers: {'X-My-Custom-Header': 'Header-Value'}
+			};
+
+			window.axios.defaults.withCredentials = false;
+			window.axios.get('https://pilots.omaramaairfield.nz/api/OA/ActiveFlights/today', 
+				{ transformRequest: [(data, headers) => {
+					delete headers.common.Authorization;
+					delete headers.common['X-CSRF-TOKEN'];
+					delete headers.common['X-Requested-With'];
+					return data 
+				}] }
+				).then(function (response) {
+				that.omaFlightFollowing = response.data;
+			});
+			
+			// // example data
+			// this.omaFlightFollowing = [
+			// 	{
+			// 		"Id": 9,
+			// 		"ClubID": 0,
+			// 		"PilotID": 51,
+			// 		"Rego": "CNC",
+			// 		"PilotName": "Someone Else",
+			// 		"PilotPhone": "021 619 539",
+			// 		"AircraftType": "ASW19b",
+			// 		"TakeOffTime": "2021-05-31T09:00:00",
+			// 		"FFAgentName": "Colleen Ryan ",
+			// 		"FFAgentPhone": "021619333",
+			// 		"Notes": null,
+			// 		"CancelledBy": "#"
+			// 	},
+			// 	{
+			// 		"Id": 10,
+			// 		"ClubID": 0,
+			// 		"PilotID": 51,
+			// 		"Rego": "nm",
+			// 		"PilotName": "Brian Savage",
+			// 		"PilotPhone": "021 619 539",
+			// 		"AircraftType": "duo",
+			// 		"TakeOffTime": "2021-05-31T10:00:00",
+			// 		"FFAgentName": "Colleen Ryan ",
+			// 		"FFAgentPhone": "021619333",
+			// 		"Notes": null,
+			// 		"CancelledBy": "#"
+			// 	}
+			// ]
 		}
 
 	}

@@ -12,9 +12,8 @@
 				v-on:searching="last_name = $event; showAddNew=false" 
 				:resigned="true"></member-selector>
 		</div>
-
 		<div v-if="selectedMember" class="mt-4 mb-4">
-
+			
 			<h3>Is {{selectedMember.first_name}} {{selectedMember.last_name}} the person you're adding?</h3>
 
 			<span class="text-muted">Current Club</span> {{selectedMember.club}}
@@ -156,7 +155,7 @@
 					last_name: this.last_name,
 					gnz_membertype_id: this.gnz_membertype_id,
 					membertype_id: this.membertype_id,
-					join_date: thedate
+					date_joined: thedate
 				}).then(function (response) {
 					messages.$emit('success', 'Member added');
 
@@ -195,7 +194,7 @@
 					org_id: this.org.id, 
 					member_id: this.existingMemberId, 
 					membertype_id:this.membertype_id,
-					join_date: thedate
+					date_joined: thedate
 				}).then(function (response) {
 					messages.$emit('success', 'Member added');
 					window.location.href = '/members/' + that.existingMemberId + '/edit';

@@ -59,6 +59,8 @@ class MembersApiController extends ApiController
 		$member->club = $org->gnz_code;
 		$member->needs_gnz_approval = true;
 		$member->gnz_membertype_id = $request->input('gnz_membertype_id', null);
+		$member->date_joined = $request->input('date_joined', Carbon::now(new CarbonTimeZone('Pacific/Auckland')));
+		$member->first_date_joined = $request->input('date_joined', Carbon::now(new CarbonTimeZone('Pacific/Auckland')));
 		$member->created = Carbon::now(new CarbonTimeZone('Pacific/Auckland'));
 
 		if ( $request->input('submit_to_gnz') ) {
@@ -77,7 +79,7 @@ class MembersApiController extends ApiController
 				$affiliate = new Affiliate();
 				$affiliate->member_id = $member->id;
 				$affiliate->org_id = $org->id;
-				$affiliate->join_date = Carbon::now(new CarbonTimeZone('Pacific/Auckland'));
+				$affiliate->join_date = $request->input('date_joined', Carbon::now(new CarbonTimeZone('Pacific/Auckland')));
 				$affiliate->membertype_id = $request->input('membertype_id', null);
 				$affiliate->save();
 			}
@@ -361,6 +363,7 @@ class MembersApiController extends ApiController
 			// gnz things that club admins can also change
 			$form['gnz_membertype_id'] = $request->get('gnz_membertype_id');
 			$form['date_joined'] = $request->get('date_joined');
+			$form['first_date_joined'] = $request->get('first_date_joined');
 			$form['club'] = $request->get('club');
 
 		}

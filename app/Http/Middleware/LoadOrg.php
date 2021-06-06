@@ -27,6 +27,7 @@ class LoadOrg
 			$subdomain = 'gnz';
 		}
 		
+		// load the current org the user is viewing
 		if ($org = Org::where('slug', $subdomain)->first())
 		{
 			// get all settings for the org

@@ -117,13 +117,12 @@ class MembersController extends Controller
 
 		// get the club this member is a member of
 		$data['member'] = Member::findOrFail($id);
-		if (!$data['members_org'] = Org::where('gnz_code', $data['member']->club)->first())
-		{
-			abort(403);
-		}
+
+		$data['current_org'] = \Request::get('_ORG');
+
 
 		// check if the current logged in user is an admin of the club
-		if (Gate::allows('club-admin', $data['members_org']) || Gate::allows('edit-awards')) {
+		if (Gate::allows('club-admin', $data['current_org']) || Gate::allows('edit-awards')) {
 			$data['allows_edit']=true;
 		}
 
@@ -149,15 +148,11 @@ class MembersController extends Controller
 
 		// get the club this member is a member of
 		$data['member'] = Member::findOrFail($member_id);
-		if (!$members_org = Org::where('gnz_code', $data['member']->club)->first())
-		{
-			abort(403);
-		}
 
 		$data['rating'] = Rating::findOrFail($ratingMember->rating_id);
 
 		// check if the current logged in user is an admin of the club
-		if (Gate::allows('club-admin', $members_org)) {
+		if (Gate::allows('club-admin', $data['member']->affiliates)) {
 			$data['allows_edit']=true;
 		}
 

@@ -54,7 +54,5 @@ class AdminApiController extends ApiController
 		} else {
 			return $this->success('No users with changed addresses for today');
 		}
-
 	}
-
 }
