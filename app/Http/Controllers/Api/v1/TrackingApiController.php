@@ -19,7 +19,7 @@ use DateTimeZone;
 use Log;
 use SRTMGeoTIFFReader;
 
-include(app_path() . '/Classes/SRTMGeoTIFFReader.php');
+include_once(app_path() . '/Classes/SRTMGeoTIFFReader.php');
 
 /**
  * Types of entries
@@ -54,9 +54,9 @@ class TrackingApiController extends ApiController
 
 	/**
 	 * Manual insertion API
-	 * 
+	 *
 	 * {"aircraft":"ZK-GGR","type":8, "points": [{"utctime":1542638495,"lat":-41.2334745,"lon":174.348365,"alt":345.1,"speed":25,"course":180,"vspeed":5.3},{"utctime":1542638496,"lat":-41.2334343,"lon":174.32545,"alt":345.1,"speed":25,"course":180,"vspeed":5.3}]}
-	 * 
+	 *
 	 * aircraft: can be "ZK-GGR" or "GGR" or the FLARM hex code of the aircraft. If using registration, it must be in the gliding.net.nz aircraft DB.
 	 * type: should be 8 unless a specific custom type is used.
 	 * points: an array of points, consisting of the following:
@@ -89,7 +89,7 @@ class TrackingApiController extends ApiController
 
 		$hex = $aircraft->flarm;
 		$type=8;
-		if (isset($data->type) && is_numeric($data->type) && $data->type>=8) 
+		if (isset($data->type) && is_numeric($data->type) && $data->type>=8)
 		{
 			$type = $data->type;
 		}
@@ -105,7 +105,7 @@ class TrackingApiController extends ApiController
 			$lat = $point['lat'];
 			$lon = $point['lon'];
 			$alt = $point['alt'];
-			
+
 			// optional data
 			$speed = isset($point['speed']) ? $point['speed'] : NULL;
 			$vspeed = isset($point['vspeed']) ? $point['vspeed'] : NULL;
@@ -151,7 +151,7 @@ class TrackingApiController extends ApiController
 		{
 			$data_array = $request->json()->all();
 			//print_r($data_array);
-			
+
 			Log::info($data_array);
 
 			$current_table_name = '';
@@ -162,7 +162,7 @@ class TrackingApiController extends ApiController
 			$aircraft = Aircraft::where('pi','=',$device_id)->first();
 
 			if(!$aircraft) return $this->error('Aircraft not Found. Check an aircraft in the system has the ID number '. $device_id);
-			
+
 			// this will store all the IDs that we successfully store in the DB
 			$ids_done = [];
 			$tiles = [];
@@ -170,7 +170,7 @@ class TrackingApiController extends ApiController
 			foreach ($data_array['rows'] AS $data)
 			{
 				$utcdate = new DateTime();
-				$utcdate->setTimestamp((integer)$data[1]); 
+				$utcdate->setTimestamp((integer)$data[1]);
 
 				switch (substr($data[2], 0, 1))
 				{
@@ -194,7 +194,7 @@ class TrackingApiController extends ApiController
 						{
 							$tile->last_strength = null;
 						}
-						
+
 
 						$tile->last_device_id = $device_id;
 						if (isset($aircraft->id)) $tile->last_aircraft_id = $aircraft->id;
@@ -242,7 +242,7 @@ class TrackingApiController extends ApiController
 
 						$nzdate->setTimezone(new DateTimeZone('Pacific/Auckland')); // convert UTC to NZ time
 						$table_name = 'data' . $nzdate->format('Ymd');
-						
+
 						// only check the DB table if this is a new date from previous
 						if ($table_name!=$current_table_name) {
 							if (!$this->check_table_exists($nzdate)) $this->make_table($nzdate);
@@ -257,7 +257,7 @@ class TrackingApiController extends ApiController
 
 						$lat_minutes = substr($lat, strlen($lat)-9);
 						$long_minutes = substr($long, strlen($long)-9);
-						
+
 						$lat_decimal = $lat_degrees + ($lat_minutes/60);
 						$long_decimal = $long_degrees + ($long_minutes/60);
 
@@ -298,9 +298,9 @@ Example string:
     [0] => 861585042912483$211051.00 	ID & time
     [1] => A 							GPS Status
     [2] => 3744.2431 					Latitude
-    [3] => S 							
+    [3] => S
     [4] => 17544.3354 					Longitude
-    [5] => E 		
+    [5] => E
     [6] => 								Speed Over Ground knots
     [7] => 153.28						Course Over Ground degrees
     [8] => 69.8							Altitude meters
@@ -335,7 +335,7 @@ Example string:
 		$utc_time = $first_chunk[1];
 		$lat = $data[2];
 		$long = $data[4];
-		$speed = $data[6]; 
+		$speed = $data[6];
 		if ($speed) {
 			$speed = $speed * 1.852; // convert knots to km/h
 		}
@@ -349,7 +349,7 @@ Example string:
 
 		$lat_minutes = substr($lat, strlen($lat)-7);
 		$long_minutes = substr($long, strlen($long)-7);
-		
+
 		$lat_decimal = $lat_degrees + ($lat_minutes/60);
 		$long_decimal = $long_degrees + ($long_minutes/60);
 
@@ -375,7 +375,7 @@ Example string:
 		$nzdate = DateTime::createFromFormat("Y-m-d H:i:s", $timestamp);
 		$nzdate->setTimezone(new DateTimeZone('Pacific/Auckland')); // convert UTC to NZ time
 		$table_name = 'data' . $nzdate->format('Ymd');
-		
+
 		if (!$this->check_table_exists($nzdate)) $this->make_table($nzdate);
 
 		DB::connection('ogn')->insert('insert into '. $table_name .' (thetime, alt, loc, hex, speed, course, type, rego, vspeed) values (?, ?, POINT(?,?), ?, ?, ?, ?, ?, ?)', [$timestamp, $alt, $lat, $long, $hex, $speed, $course, 9, substr($aircraft['rego'], 3,3), null]);
@@ -454,9 +454,9 @@ Example string:
 
 			return $this->success();
 		} else {
-			return $this->error('Aircraft not found');; 
+			return $this->error('Aircraft not found');;
 		}
-		return $this->error(); 
+		return $this->error();
 	}
 
 
@@ -475,7 +475,7 @@ Example string:
 
 			$xml = simplexml_load_string($request->getContent());
 			//Log::info(print_r($xml, 1));
-			
+
 			if (!isset($xml->devId)) {
 				Log::info("Couldn't find devId on btraced XML");
 				Log::info(print_r($xml, 1));
@@ -484,26 +484,26 @@ Example string:
 
 			// Get device identification
 			$deviceId = $xml->devId;
-			
+
 			// Prepare list of points
 			$goodPointsList = "";
 
 			// Start processing each travel
 			foreach ($xml->travel as $travel) {
-				
+
 				// Get travel common information
 				$travelId = $travel->id;
 				$travelName = $travel->description;
 				$travelLength = $travel->length;
 				$travelTime = $travel->time;
 				$travelTPoints = $travel->tpoints;
-				
+
 				// Prepare the succesful points
 				$goodPointsList = '';
-				
+
 				// Process each point
 				foreach ($travel->point as $point) {
-					
+
 					// Get all the information for this point
 					$pointId = $point->id;
 					$pointDate = date("Y-m-d H:i:s", trim($point->date));
@@ -519,7 +519,7 @@ Example string:
 					$pointTDist = $point->tdist;
 					$pointRDist = $point->rdist;
 					$pointTTime = $point->ttime;
-					
+
 					// check if we have a good fix. If alt is zero, probably not, and don't store the point.
 					if ($pointAltitude!=0)
 					{
@@ -527,7 +527,7 @@ Example string:
 						// $nzdate->setTimezone(new DateTimeZone('Pacific/Auckland')); // don't convert because the UNIX time coming in is already NZ time. Bad btraced.
 						$nzdate->setTimestamp(trim($point->date));
 						$table_name = 'data' . $nzdate->format('Ymd');
-						
+
 						// create the UTC time from the NZ time. Had to output and import again to loose the timezone, as the nzdate above is in the wrong timezone.
 						$utcdate = DateTime::createFromFormat("Y-m-d H:i:s", $nzdate->format('Y-m-d H:i:s'), new DateTimeZone('Pacific/Auckland'));
 						$utcdate->setTimezone(new DateTimeZone('UTC'));
@@ -552,7 +552,7 @@ Example string:
 				}
 			}
 
-			// Check if there was points 
+			// Check if there was points
 			if ($goodPointsList != "") {
 				// Remove last comma
 				$goodPointsList = substr($goodPointsList, 0, -1);
@@ -625,7 +625,7 @@ Example string:
 			$nzdate = new DateTime($request['deviceSendDateTime']);
 			$nzdate->setTimezone(new DateTimeZone('Pacific/Auckland'));
 			$table_name = 'data' . $nzdate->format('Ymd');
-		
+
 			// check the table exists, otherwise make it
 			if (!$this->check_table_exists($nzdate)) $this->make_table($nzdate);
 
@@ -642,7 +642,7 @@ Example string:
 			{
 				DB::connection('ogn')->insert('insert into '. $table_name .' (thetime, alt, loc, hex, speed, course, type, rego) values (?, ?, POINT(?,?), ?, ?, ?, ?, ?)', [$thetimestamp, $altitude, $request['latitude'], $request['longitude'], $hex, $speed, $course, $type, $rego]);
 			}
-			
+
 		}
 		else
 		{
@@ -695,14 +695,14 @@ Example string:
 
 
 						DB::connection('ogn')->insert('insert into '. $table_name .' (thetime, alt, loc, hex, speed, course, type, rego) values (?, ?, POINT(?,?), ?, ?, ?, ?, ?)', [
-								$thetimestamp, 
-								$location->properties->altitude, 
-								$location->geometry->coordinates[1], 
-								$location->geometry->coordinates[0], 
-								$aircraft['flarm'], 
+								$thetimestamp,
+								$location->properties->altitude,
+								$location->geometry->coordinates[1],
+								$location->geometry->coordinates[0],
+								$aircraft['flarm'],
 								$location->properties->speed * 3.6, // convert from m/s to km/h
-								NULL, 
-								4, 
+								NULL,
+								4,
 								$rego
 							]);
 					}
@@ -712,7 +712,7 @@ Example string:
 
 		$data['result']='ok';
 		return response()->json($data);
-		
+
 
 	}
 
@@ -755,8 +755,8 @@ Example string:
 	{
 		// Example feed
 		// https://inreach.garmin.com/feed/Share/keithessex?d1=2017-07-15T00:01z
-		// 
-		// 
+		//
+		//
 		// get the list of active InReaches
 
 		Log::info('Fetching US InReach');
@@ -848,7 +848,7 @@ Example string:
 											break;
 									}
 								}
-								
+
 								// get the hex code for the aircraft
 								$hex = $aircraft['flarm'];
 								if ($hex==null) $hex=substr($aircraft['rego'], 3,3);
@@ -863,7 +863,7 @@ Example string:
 
 								if (!$ping) {
 									DB::connection('ogn')->insert('insert into '. $table_name .' (thetime, alt, loc, hex, speed, course, type, rego) values (?, ?, POINT(?,?), ?, ?, ?, ?, ?)', [$thetimestamp, $alt, $lat, $lng, $hex, $speed, $course, 10, substr($aircraft['rego'], 3,3)]);
-								} 
+								}
 
 							}
 						}
@@ -896,7 +896,7 @@ Example string:
 			{
 				// create the correct URL for this aircraft
 				$aircraft_url = str_replace('FEED_ID_HERE', $aircraft['spot_feed_id'], $this->url);
-				
+
 
 				if ($json = file_get_contents($aircraft_url))
 				{
@@ -918,7 +918,7 @@ Example string:
 						foreach ($obj->response->feedMessageResponse->messages->message AS $point)
 						{
 							if (!isset($point->unixTime)) continue;
-							
+
 							$thetimestamp = date("Y-m-d H:i:s", $point->unixTime); // TOFIX
 							$nzdate = new DateTime('@' . $point->unixTime);
 							$nzdate->setTimezone(new DateTimeZone('Pacific/Auckland'));
@@ -939,7 +939,7 @@ Example string:
 							$ping = DB::connection('ogn')->table($table_name)->where('thetime', $thetimestamp)->where('type', 2)->first();
 							if (!$ping) {
 								DB::connection('ogn')->insert('insert into '. $table_name .' (thetime, alt, loc, hex, speed, course, type, rego) values (?, ?, POINT(?,?), ?, ?, ?, ?, ?)', [$thetimestamp, $alt, $point->latitude, $point->longitude, $hex, NULL, NULL, 2, substr($aircraft['rego'], 3,3)]);
-							} 
+							}
 						}
 					}
 
@@ -950,7 +950,7 @@ Example string:
 			}
 		}
 		return $this->success($data, FALSE);
-		//return $this->error(); 
+		//return $this->error();
 	}
 
 
@@ -965,12 +965,12 @@ Example string:
 		{
 			return $this->success($days);
 		}
-		return $this->error(); 
+		return $this->error();
 	}
 
 	public function dayHexes($date)
 	{
-		if (!$table_name = $this->_get_table_name($dayDate)) return $this->error(); 
+		if (!$table_name = $this->_get_table_name($dayDate)) return $this->error();
 		if (!Schema::connection('ogn')->hasTable($table_name)) return $this->not_found("Day Not Found");
 
 		$hexes = DB::connection('ogn')->select('SELECT count(hex) AS hex_count, hex FROM `'.$table_name."` WHERE hex<>'' GROUP BY hex");
@@ -979,13 +979,13 @@ Example string:
 		{
 			return $this->success($hexes);
 		}
-		return $this->error(); 
+		return $this->error();
 	}
 
 
 	public function latestDayPings($dayDate)
 	{
-		if (!$table_name = $this->_get_table_name($dayDate)) return $this->error(); 
+		if (!$table_name = $this->_get_table_name($dayDate)) return $this->error();
 		if (!Schema::connection('ogn')->hasTable($table_name)) return $this->not_found("Day Not Found");
 
 		// check if we have the vspeed column
@@ -1006,13 +1006,13 @@ Example string:
 			}
 			return $this->success($pings);
 		}
-		return $this->error(); 
+		return $this->error();
 	}
 
 
 	public function DayPings($dayDate, $pointsPerHex=5)
 	{
-		if (!$table_name = $this->_get_table_name($dayDate)) return $this->error(); 
+		if (!$table_name = $this->_get_table_name($dayDate)) return $this->error();
 		if (!Schema::connection('ogn')->hasTable($table_name)) return $this->not_found("Day Not Found");
 		$pointsPerHex = (int)$pointsPerHex; // ensure $pointsPerHex is an integer
 
@@ -1032,7 +1032,7 @@ Example string:
 
 		if ($hexes)
 		{
-			// then craft a query to get latest x points 
+			// then craft a query to get latest x points
 			foreach ($hexes AS $hex)
 			{
 				$hexArray[]=$hex->hex;
@@ -1041,7 +1041,7 @@ Example string:
 		}
 		if ($regos)
 		{
-			// then craft a query to get latest x points 
+			// then craft a query to get latest x points
 			foreach ($regos AS $rego)
 			{
 				$hexArray[]=$rego->rego;
@@ -1066,13 +1066,13 @@ Example string:
 			}
 		}
 
-		return $this->error(); 
+		return $this->error();
 	}
 
 
 	public function dayHexPings(Request $request, $dayDate, $hex)
 	{
-		if (!$table_name = $this->_get_table_name($dayDate)) return $this->error(); 
+		if (!$table_name = $this->_get_table_name($dayDate)) return $this->error();
 		if (!Schema::connection('ogn')->hasTable($table_name)) return $this->not_found("Day Not Found");
 
 		$rego = $hex;
@@ -1097,10 +1097,10 @@ Example string:
 				$pings[$key]->gl = $this->_get_ground_level($ping->lat, $ping->lng);
 				if (!isset($ping->vspeed)) $pings[$key]->vspeed=null;
 			}
-			
+
 			return $this->success($pings);
 		}
-		return $this->error(); 
+		return $this->error();
 	}
 
 	protected function _get_table_name($dayDate)
@@ -1129,7 +1129,7 @@ Example string:
 		{
 			return null;
 		}
-		
+
 
 		return null;
 	}
