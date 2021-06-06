@@ -19,7 +19,7 @@ use SRTMGeoTIFFReader;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 
-include(app_path() . '/Classes/SRTMGeoTIFFReader.php');
+include_once(app_path() . '/Classes/SRTMGeoTIFFReader.php');
 
 
 /**
@@ -42,9 +42,9 @@ class Tracking2ApiController extends ApiController
 	 *
 	 * @return \Illuminate\Http\Response
 	 */
-	
+
 	// added #FD6760 for edwin!
-	// List of colours to use 
+	// List of colours to use
 	var $colours = ['e86666', 'ab4b4b', 'e87766', 'ba6052', '8c483e', 'e88966', 'ba6e52', '8c533e', 'e89a66', 'ab714b', 'c99559', 'FD6760', 'c9a459', '8c723e', 'e8ce66', '9c8a44', 'aba44b', 'dfe866', 'b3ba52', '878c3e', 'b0d95f', '8aba52', '739c44', '9ae866', '68c959', '58ab4b', '66e866', '3e8c3e', '66e889', '4bab65', '3e8c5d', '66e8ab', '52ba8a', '5fd9b0', '449c7f', '59c9b3', '66e8df', '52bab3', '3e8c87', '5fd1d9', '4ba4ab', '66cee8', '52a5ba', '3e7d8c', '5fb0d9', '4b8bab', '3e728c', '66abe8', '44739c', '669ae8', '44679c', '6689e8', '526eba', '3e538c', '6677e8', '44509c', '6052ba', '483e8c', '805fd9', '67449c', 'ab66e8', '8a52ba', 'ce66e8', 'ab4ba4', '8c3e87', 'e866ce', 'c959a4', '9c447f', 'e8669a', 'ba527c', 'e86689', '9c445c', 'e86677', 'ab4b58'];
 
 
@@ -52,8 +52,8 @@ class Tracking2ApiController extends ApiController
 	{
 
 		if (!$request->has('device_id')) return $this->error('device ID is required');
-		
-		
+
+
 		$device_id = $request->input('device_id');
 
 		$ip = NULL;
@@ -88,7 +88,7 @@ class Tracking2ApiController extends ApiController
 
 
 		$points = (int)$points; // ensure $pointsPerHex is an integer
-		if (!$table_name = $this->_get_table_name($dayDate)) return $this->error(); 
+		if (!$table_name = $this->_get_table_name($dayDate)) return $this->error();
 		if (!Schema::connection('ogn')->hasTable($table_name)) return $this->not_found("Day Not Found");
 
 		$aircraft = [];
@@ -101,7 +101,7 @@ class Tracking2ApiController extends ApiController
 		if (Cache::has($unique_aircraft_key))
 		{
 			$unique_aircraft = Cache::get($unique_aircraft_key);
-		} 
+		}
 		else
 		{
 			$results = DB::connection('ogn')->select('select distinct rego, hex FROM `'.$table_name.'`');
@@ -225,7 +225,7 @@ class Tracking2ApiController extends ApiController
 		// rather than having to get the latest point array item
 		foreach ($unique_aircraft AS $key=>$craft)
 		{
-			// put the current altitude in the 
+			// put the current altitude in the
 			$unique_aircraft[$key]->alt = $craft->points[0]->alt;
 			$unique_aircraft[$key]->gl = $craft->points[0]->gl;
 			$unique_aircraft[$key]->agl = null;
@@ -258,7 +258,7 @@ class Tracking2ApiController extends ApiController
 
 	public function aircraft(Request $request, $dayDate, $key)
 	{
-		if (!$table_name = $this->_get_table_name($dayDate)) return $this->error(); 
+		if (!$table_name = $this->_get_table_name($dayDate)) return $this->error();
 		if (!Schema::connection('ogn')->hasTable($table_name)) return $this->not_found("Day Not Found");
 
 		$rego = $hex = $key;
@@ -327,7 +327,7 @@ class Tracking2ApiController extends ApiController
 		}
 
 		return $this->success(Array());
-		
+
 	}
 
 	// walk through all points backwards and work out course directions from previous points
@@ -372,12 +372,12 @@ class Tracking2ApiController extends ApiController
 	}
 
 	/**
-	 * Process the points given and calculate any extra data needed 
+	 * Process the points given and calculate any extra data needed
 	 * such as course direction, speed and vertical speed from previous points
 	 * @param  [type] $points [description]
 	 * @return [type]         [description]
 	 */
-	protected function _process_point($point) 
+	protected function _process_point($point)
 	{
 		// round the lat and long to 6 digits, so we don't transmit unnecessary data
 		$point->lat = round($point->lat, 6);
@@ -427,7 +427,7 @@ class Tracking2ApiController extends ApiController
 		{
 			return null;
 		}
-		
+
 
 		return null;
 	}

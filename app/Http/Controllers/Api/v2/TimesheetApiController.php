@@ -11,14 +11,14 @@ use Gate;
 use Auth;
 use DB;
 
-include(app_path() . '/Classes/SRTMGeoTIFFReader.php');
+include_once(app_path() . '/Classes/SRTMGeoTIFFReader.php');
 
 class TimesheetApiController extends ApiController
 {
 	/**
 	 * Generate a list of flights from a day
 	 * /api/v2/timesheet/generate/date/site
-	 * 
+	 *
 	 *
 	 * @return \Illuminate\Http\Response
 	 */
@@ -27,7 +27,7 @@ class TimesheetApiController extends ApiController
 		$day_date = $this->_get_table_name($date);
 
 
-		return $this->error(); 
+		return $this->error();
 	}
 
 
@@ -35,7 +35,7 @@ class TimesheetApiController extends ApiController
 	/**
 	 * Generate a list of flights from a day
 	 * /api/v2/timesheet/generate/date/site
-	 * 
+	 *
 	 *
 	 * @return \Illuminate\Http\Response
 	 */
@@ -70,7 +70,7 @@ class TimesheetApiController extends ApiController
 			if (isset($points[$key+1]))
 			{
 				$next_point = $points[$key+1];
-				if ($next_point->thetime==$point->thetime) 
+				if ($next_point->thetime==$point->thetime)
 				{
 					unset($points[$key+1]);
 				}
@@ -92,8 +92,8 @@ class TimesheetApiController extends ApiController
 				$no_altitude=true;
 				$point->alt = $prev_alt;
 
-				// low speed for devices with no altitude is a lot lower because 
-				// it's probably a SPOT, they might have not travelled far in 10 mins, 
+				// low speed for devices with no altitude is a lot lower because
+				// it's probably a SPOT, they might have not travelled far in 10 mins,
 				// so speed is much lower
 				$low_speed_threashold = 1;
 			}
@@ -129,7 +129,7 @@ class TimesheetApiController extends ApiController
 				// 	print_r($next_point);
 				// 	print_r('----------');
 				// }
-				
+
 				$point->this_time = $point->thetime;
 				$point->next_time = $next_point->thetime;
 				if ($point_time->diffInSeconds($next_point_time)!=0)
@@ -146,7 +146,7 @@ class TimesheetApiController extends ApiController
 				if ($point->agl>20 || $no_altitude) {
 
 					// only start flying if we either have a ground speed >9m/s
-					if ($point->speed>$low_speed_threashold 
+					if ($point->speed>$low_speed_threashold
 						|| ($point->speed===null && $point->speed_next>$low_speed_threashold))
 					{
 						// check if the next point actually is off the ground (e.g. the current one might be a spot and the next one isn't)
@@ -163,10 +163,10 @@ class TimesheetApiController extends ApiController
 							}
 							$status='flying';
 						}
-						
+
 					}
 				}
-				
+
 				if ($status=='flying')
 				{
 					$flights[$flight]['end'] = $point->thetime;
@@ -177,11 +177,11 @@ class TimesheetApiController extends ApiController
 					$flights[$flight]['duration'] = $start->diffInSeconds($end);
 				}
 
-				// check if we've landed, and check the next point is also below our threashold 
+				// check if we've landed, and check the next point is also below our threashold
 				// to filter out weird GPS data
 				if ($status=='flying' && ($point->agl < 25 || $no_altitude))
 				{
-					if (($point->speed===null && $point->speed_next<$low_speed_threashold) 
+					if (($point->speed===null && $point->speed_next<$low_speed_threashold)
 						|| ($point->speed!==null && $point->speed<$low_speed_threashold && $point->speed_next<$low_speed_threashold))
 					{
 						$status='ground';
@@ -191,7 +191,7 @@ class TimesheetApiController extends ApiController
 			$point->status = $status;
 			$prev_alt = $point->alt;
 
-			$results[] = $point->type . ' ' . $point->thetime . ' ' . $status. ' distance ' . $point->distanceToNext . ' speed: '. $point->speed . ' speedToNext: '.  $point->speed_next  . ' alt ' . $point->alt . ' agl ' . $point->agl; 
+			$results[] = $point->type . ' ' . $point->thetime . ' ' . $status. ' distance ' . $point->distanceToNext . ' speed: '. $point->speed . ' speedToNext: '.  $point->speed_next  . ' alt ' . $point->alt . ' agl ' . $point->agl;
 			//. ' this_time: '. $point->this_time . ' next_time: '.  $point->next_time
 		}
 
@@ -217,14 +217,14 @@ class TimesheetApiController extends ApiController
 							$flights[$key]['pilots'] = null;
 						}
 					}
-					
+
 				}
 			}
 
 			// fix up the indexes of the array if we removed any duplicates
 			$flights = array_values($flights);
 		}
-		
+
 
 		return $this->success(array($flights, $results));
 		return $this->success($flights);
@@ -255,7 +255,7 @@ class TimesheetApiController extends ApiController
 		{
 			return null;
 		}
-		
+
 
 		return null;
 	}
